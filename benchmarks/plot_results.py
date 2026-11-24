@@ -69,19 +69,30 @@ def plot_batch(csv: Path, out: Path) -> None:
             line(ax, g["mvalues"], g["mvals_per_s"], i, label)
     style(ax, "Throughput ETL theo quy mô dữ liệu", "Số giá trị đầu vào (triệu)", "Triệu giá trị / giây", note)
     ax.set_ylim(bottom=0)
-    ax.legend(frameon=False, labelcolor=INK2, loc="upper left")
+    ax.legend(frameon=False, labelcolor=INK2, loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=4)
     ax.margins(x=0.15)
+    raw = pd.read_csv(csv)  # chú thích RAM đỉnh của pandas (nếu có đo)
+    mem = raw[(raw.engine == "pandas") & raw.note.astype(str).str.startswith("peak_rss_mb=")]
+    if not mem.empty:
+        r = mem.sort_values("input_values").iloc[-1]
+        gb = float(str(r.note).split("=")[1]) / 1024
+        ax.annotate(f"pandas: RAM đỉnh {gb:.1f} GB", (r.input_values / 1e6, r.input_values / r.total_s / 1e6),
+                    xytext=(8, -16), textcoords="offset points", ha="left", va="center", fontsize=8, color=MUTED)
     save(fig, out / "batch_throughput_vs_size.png")
 
     # 2) Speedup theo số core (quy mô lớn nhất có đủ 1 core)
     loc = df[df["mode"] == "local"]
-    scale = loc.groupby("scale").cores.nunique().idxmax() if not loc.empty else None
+    if loc.empty:
+        scale = None
+    else:
+        n_cores = loc.groupby("scale").cores.nunique()
+        scale = n_cores[n_cores == n_cores.max()].index.max()
     if scale is not None:
         g = loc[loc.scale == scale].sort_values("cores")
         base = g[g.cores == g.cores.min()].total_s.iloc[0]
         g = g.assign(speedup=base / g.total_s)
         fig, ax = plt.subplots(figsize=(6.5, 4.2))
-        ax.bar(g.cores.astype(str), g.speedup, width=0.45, color=SERIES[0])
+        ax.bar(g.cores.astype(str), g.speedup, width=0.3, color=SERIES[0])
         ax.plot(g.cores.astype(str), g.cores / g.cores.min(), color=MUTED, linewidth=1, label="tuyến tính lý tưởng")
         for xc, yv, ts in zip(g.cores.astype(str), g.speedup, g.total_s):
             ax.annotate(f"{yv:.2f}×\n({ts:.0f}s)", (xc, yv), xytext=(0, 4), textcoords="offset points",
@@ -91,22 +102,24 @@ def plot_batch(csv: Path, out: Path) -> None:
         ax.set_ylim(0, max(g.cores / g.cores.min()) * 1.25)
         save(fig, out / "batch_speedup_vs_cores.png")
 
-    # 3) Local vs cluster cùng số core (quy mô x1)
-    lc = df[(df.engine == "spark") & (df.scale == df.scale.min())]
-    if (lc["mode"] == "cluster").any():
-        piv = lc.pivot_table(index="cores", columns="mode", values="total_s")
-        piv = piv.dropna()
-        fig, ax = plt.subplots(figsize=(6.5, 4.2))
-        xs = range(len(piv))
-        w = 0.36
+    # 3) Local vs cluster (cùng số core lớn nhất) theo từng quy mô
+    sp = df[df.engine == "spark"]
+    if (sp["mode"] == "cluster").any():
+        cores = sp[sp["mode"] == "cluster"].cores.max()
+        piv = sp[sp.cores == cores].pivot_table(index="scale", columns="mode", values="total_s").dropna()
+        fig, ax = plt.subplots(figsize=(7, 4.2))
+        xs = list(range(len(piv)))
+        w = 0.28
         for j, mode in enumerate(["local", "cluster"]):
-            ax.bar([x + (j - 0.5) * (w + 0.04) for x in xs], piv[mode], width=w, color=SERIES[j], label=mode)
-            for x, v in zip(xs, piv[mode]):
-                ax.annotate(f"{v:.0f}s", (x + (j - 0.5) * (w + 0.04), v), xytext=(0, 3), textcoords="offset points",
-                            ha="center", fontsize=9, color=INK)
-        ax.set_xticks(list(xs), [f"{c} core" for c in piv.index])
-        style(ax, "Local vs cluster (2 worker trên cùng máy), quy mô ×1", "", "Thời gian ETL (giây)", note)
-        ax.legend(frameon=False, labelcolor=INK2)
+            pos = [x + (j - 0.5) * (w + 0.04) for x in xs]
+            ax.bar(pos, piv[mode], width=w, color=SERIES[j], label=f"{mode} ({cores} core)")
+            for x, v in zip(pos, piv[mode]):
+                ax.annotate(f"{v:.0f}s", (x, v), xytext=(0, 3), textcoords="offset points", ha="center",
+                            fontsize=9, color=INK)
+        ax.set_xticks(xs, [f"×{sc} ({df[df.scale == sc].input_values.iloc[0] / 1e6:.0f} triệu)" for sc in piv.index])
+        style(ax, f"Local vs cluster 2 worker trên cùng máy ({cores} core)", "Quy mô dữ liệu",
+              "Thời gian ETL (giây)", note)
+        ax.legend(frameon=False, labelcolor=INK2, loc="upper left")
         save(fig, out / "batch_local_vs_cluster.png")
 
 
@@ -114,7 +127,9 @@ def plot_stream(csv: Path, out: Path) -> None:
     df = pd.read_csv(csv)
     note = f"Máy đo: {int(df.host_cpus.iloc[0])} vCPU, Docker; Kafka 6 partition, trigger 2s. Nguồn: {csv.name}"
     for (mode, cores, ml), g in df.groupby(["mode", "cores", "ml"]):
-        g = g.sort_values("target_rate")
+        g = g.groupby("target_rate", as_index=False).median(numeric_only=True).sort_values("target_rate")
+        if len(g) < 2:  # 1 điểm đo (vd. chạy kèm ML) -> báo cáo bằng bảng, không vẽ đường
+            continue
         tag = f"{mode}, {cores} core{', ML bật' if ml else ''}"
         suffix = f"{mode}_{cores}c{'_ml' if ml else ''}"
         fig, ax = plt.subplots(figsize=(8, 4.4))
@@ -145,10 +160,14 @@ def main() -> None:
     ap.add_argument("--results", default="benchmarks/results")
     args = ap.parse_args()
     res = Path(args.results)
-    if (res / "batch_scaling.csv").exists():
+
+    def has_rows(p: Path) -> bool:
+        return p.exists() and sum(1 for _ in p.open()) > 1  # có header + ít nhất 1 dòng
+
+    if has_rows(res / "batch_scaling.csv"):
         print("Batch:")
         plot_batch(res / "batch_scaling.csv", res)
-    if (res / "stream_scaling.csv").exists():
+    if has_rows(res / "stream_scaling.csv"):
         print("Streaming:")
         plot_stream(res / "stream_scaling.csv", res)
 

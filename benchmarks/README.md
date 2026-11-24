@@ -51,5 +51,63 @@ Một mức R được coi là **bền vững** nếu throughput ≈ R, drain �
 nhóm** và thay số liệu; xu hướng mới là điều cần phân tích.
 
 <!-- RESULTS_START -->
-(đang cập nhật)
+### Batch ETL (giây; giá trị đầu vào = số điểm đo thô)
+
+| Cấu hình | ×1 (5,96 triệu) | ×2 (11,9 triệu) | ×4 (23,8 triệu) | ×8 (47,7 triệu) |
+|---|---|---|---|---|
+| pandas (1 tiến trình) | **17,3** | **21,6** | **43,6** (RAM đỉnh 5,9 GB) | không chạy (ước tính ~12 GB RAM) |
+| Spark local[1] | 49,2 | 76,6 | 139,3 | — |
+| Spark local[2] | 25,5 | 41,6 | 79,9 | — |
+| Spark local[4] | 18,6 | 27,2 | 49,1 | 111,5 |
+| Spark cluster, 2 core | 40,1 | 62,4 | 103,4 | — |
+| Spark cluster, 4 core | 35,2 | 52,2 | 81,0 | — |
+
+- Speedup theo core ở ×4: 1,74× (2 core), **2,84×** (4 core) — hiệu suất song song 71%.
+- pandas nhanh hơn khi dữ liệu vừa RAM nhưng bộ nhớ tăng tuyến tính; Spark xử lý ×8 với bộ nhớ driver giới hạn 6 GB.
+- Cluster 2 worker *trên cùng máy* chậm hơn local 1,65–1,9× (chi phí mạng/tuần tự hóa); khoảng cách thu hẹp khi dữ liệu lớn.
+
+![](results/batch_throughput_vs_size.png)
+![](results/batch_speedup_vs_cores.png)
+![](results/batch_local_vs_cluster.png)
+
+### Streaming Kafka → Spark (cluster 4 core, trigger 2 s) → PostgreSQL
+
+| Tốc độ phát (msg/s) | Bản ghi xử lý | Throughput (rows/s) | Độ trễ p50 | Độ trễ p95 | Thời gian micro-batch (trung vị) | Xả backlog sau khi dừng phát | Đánh giá |
+|---|---|---|---|---|---|---|---|
+| 500 | 22.500 | 459 | 2,1 s | 3,0 s | 1,0 s | 4,0 s | theo kịp |
+| 1.000 | 45.000 | 936 | 2,4 s | 3,2 s | 1,3 s | 3,1 s | theo kịp |
+| 2.000 | 90.000 | 1.875 | 2,6 s | 3,2 s | 1,3 s | 3,0 s | theo kịp |
+| 4.000 | 180.000 | 3.822 | 2,6 s | 3,4 s | 1,5 s | 2,1 s | theo kịp |
+| 8.000 | 360.000 | 7.484 | 3,3 s | 4,0 s | 1,8 s | 3,1 s | theo kịp |
+| 16.000 | 720.000 | 14.008 | 12,0 s | 16,5 s | 8,3 s | 6,4 s | **quá tải** (batch > trigger) |
+| 24.000 | 1.049.895 | 17.886 | 24,7 s | 30,3 s | 14,0 s | 14,9 s | quá tải — trần ≈ 18 nghìn rows/s |
+| 1.000 + ML online | 45.000 | 936 | 3,5 s | 5,0 s | 3,1 s | 3,1 s | theo kịp; ML thêm ~1,1 s/batch |
+
+- Hệ thống **bền vững tới ít nhất 8.000 msg/s** (p95 ≤ 4 s); điểm gãy nằm giữa 8.000 và 16.000 msg/s, khi thời gian
+  xử lý một micro-batch vượt chu kỳ trigger nên hàng đợi tích lũy và độ trễ tăng nhanh.
+- Quy đổi (ngoại suy, chỉ xét đường dữ liệu chính, chưa tính ML): 1 trạm gửi 1 bản ghi/15 phút = 1/900 msg/s, nên
+  8.000 msg/s tương đương ~**7,2 triệu trạm** cùng tần suất (8.000 × 900) trên 1 máy 4 vCPU. Khi bật ML, chi phí
+  điền khuyết/dự báo tăng theo số trạm nên năng lực thực tế thấp hơn — cần đo thêm nếu nhóm muốn nêu con số này.
+
+![](results/stream_latency_cluster_4c.png)
+![](results/stream_throughput_cluster_4c.png)
+
+### Kiểm chứng tính đúng (late/duplicate + dừng đột ngột tiến trình xử lý)
+
+Phát 3 ngày dữ liệu (01–03/07/2025, 10 trạm) ở 3600×, bơm 1% message trễ (0,5–3 s thực ≈ 30–180 phút dữ liệu) và
+0,5% message trùng; giữa chừng `docker compose kill stream-processor`, 20 giây sau bật lại.
+
+| Chỉ số | Giá trị |
+|---|---|
+| Bản ghi lẽ ra phải đến (silver) | 2.866 |
+| Message trong Kafka | 2.876 (+10 bản trùng cố ý) |
+| Dòng trong PostgreSQL / trùng khóa | **2.866 / 0** |
+| Thiếu / thừa | **0 / 0** |
+| Dòng trong data lake Parquet / phân biệt | 2.866 / 2.866 (exactly-once), nhưng 199 file nhỏ |
+| Message trễ cố ý / bị watermark loại | 32 / 0 |
+
+Sau khi khởi động lại, Spark đọc offset từ checkpoint và **chạy lại micro-batch đang dở** (batch 2); nhờ upsert
+idempotent nên không phát sinh bản ghi trùng. Không message trễ nào bị loại vì watermark chỉ đảm bảo *không loại*
+dữ liệu trễ ít hơn ngưỡng 2 giờ; dữ liệu trễ hơn *có thể* vẫn được nhận nếu đến trước khi watermark của micro-batch
+kế tiếp vượt qua nó (ở đây backlog sau sự cố được xử lý trong cùng một batch).
 <!-- RESULTS_END -->

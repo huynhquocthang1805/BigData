@@ -86,7 +86,7 @@ FastAPI cung cấp 12 endpoint (tài liệu OpenAPI tự sinh tại `/docs`): da
 thời gian thô/đã điền khuyết, tổng hợp theo giờ, dự báo mới nhất, chuỗi dự báo kèm giá trị thực, **độ chính xác
 trực tuyến** (MAE/RMSE theo mô hình × tầm dự báo, tính bằng cách nối dự báo với giá trị thực đến sau), dự báo theo
 yêu cầu, cảnh báo và số liệu vận hành. Dashboard Streamlit gồm 4 tab: Giám sát, Dự báo, Cảnh báo, Pipeline
-(Hình 4.x — ảnh chụp màn hình).
+(Hình 4.x — `docs/images/dashboard_monitoring.png`, `dashboard_forecast.png`, `dashboard_pipeline.png`, `api_docs.png`, `spark_master_ui.png`).
 
 ## 4.u Triển khai
 

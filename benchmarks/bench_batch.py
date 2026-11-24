@@ -79,9 +79,12 @@ def run_pandas(raw: str, work: str, scale: int) -> dict:
     wide.reset_index().to_parquet(out, index=False)
     total = time.perf_counter() - t0
     os.remove(out)
+    import resource
+    peak_mb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024  # Linux: KB -> MB (đỉnh của cả tiến trình)
     return {"engine": "pandas", "mode": "single-process", "cores": 1, "scale": scale, "input_values": n_in,
             "silver_rows": len(wide), "total_s": round(total, 2), "values_per_s": round(n_in / total),
-            "bronze_s": round(t_bronze, 2), "silver_s": round(total - t_bronze, 2), "note": ""}
+            "bronze_s": round(t_bronze, 2), "silver_s": round(total - t_bronze, 2),
+            "note": f"peak_rss_mb={peak_mb:.0f}"}
 
 
 def main() -> None:
@@ -89,7 +92,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--raw", default=s.raw_path)
     ap.add_argument("--scales", type=int, nargs="+", default=[1, 2, 4])
-    ap.add_argument("--cores", type=int, nargs="+", default=[1, 2, 4], help="local[n] cho mỗi n")
+    ap.add_argument("--cores", type=int, nargs="*", default=[1, 2, 4], help="local[n] cho mỗi n (để trống = bỏ qua Spark)")
     ap.add_argument("--pandas-max-scale", type=int, default=2, help="pandas chỉ chạy tới scale này (giới hạn RAM)")
     ap.add_argument("--cluster", help="URL Spark master để chạy thêm ở chế độ cluster, vd spark://spark-master:7077")
     ap.add_argument("--cluster-cores", type=int, nargs="+", default=[2, 4])

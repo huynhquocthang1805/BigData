@@ -140,6 +140,12 @@ def write_pg(df: DataFrame, s: Settings, table: str, columns: list[str], keys: l
 _MODEL_CACHE: dict = {}
 
 
+def _utc(ts: pd.Series) -> pd.Series:
+    """Arrow trả timestamp naive theo session time zone (UTC); chuẩn hóa về tz-aware UTC theo contract."""
+    ts = pd.to_datetime(ts)
+    return ts.dt.tz_localize("UTC") if ts.dt.tz is None else ts.dt.tz_convert("UTC")
+
+
 def _get_model(kind: str, spec: str):
     """Nạp mô hình 1 lần cho mỗi Python worker (worker được tái sử dụng giữa các micro-batch)."""
     key = (kind, spec)
@@ -152,7 +158,7 @@ def _get_model(kind: str, spec: str):
 def make_impute_fn(spec: str, write_from: pd.Timestamp):
     def impute(pdf: pd.DataFrame) -> pd.DataFrame:
         from wq.timeseries import missing_mask, regularize
-        pdf = pdf.assign(ts=pd.to_datetime(pdf["ts"]).dt.tz_localize("UTC"))  # Arrow trả naive theo UTC
+        pdf = pdf.assign(ts=_utc(pdf["ts"]))
         reg = regularize(pdf)          # thêm các mốc 15 phút bị mất hẳn (trạm không gửi)
         before = missing_mask(reg)
         imputer = _get_model("imputer", spec)
@@ -167,7 +173,7 @@ def make_impute_fn(spec: str, write_from: pd.Timestamp):
 
 def make_forecast_fn(spec: str):
     def forecast(pdf: pd.DataFrame) -> pd.DataFrame:
-        pdf = pdf.assign(ts=pd.to_datetime(pdf["ts"]).dt.tz_localize("UTC"))
+        pdf = pdf.assign(ts=_utc(pdf["ts"]))
         model = _get_model("forecaster", spec)
         preds = model.predict(pdf[contracts.MEASUREMENT_COLUMNS])
         if preds.empty:

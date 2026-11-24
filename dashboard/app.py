@@ -45,10 +45,16 @@ var_info = {v["name"]: v for v in meta["variables"]}
 # ------------------------------------------------------------------ Sidebar
 st.sidebar.header("Bộ lọc")
 station_labels = {r.station_id: f"{r.station_id} – {r['name']}" for _, r in stations.iterrows()}
-station_id = st.sidebar.selectbox("Trạm", list(station_labels), format_func=station_labels.get)
-parameter = st.sidebar.selectbox("Thông số", list(var_info), index=list(var_info).index("dissolved_oxygen"),
+# Cho phép mở thẳng bằng link: ?station=USGS-07020850&param=turbidity&days=7
+qp = st.query_params
+ids = list(station_labels)
+station_id = st.sidebar.selectbox("Trạm", ids, index=ids.index(qp["station"]) if qp.get("station") in ids else 0,
+                                  format_func=station_labels.get)
+params = list(var_info)
+parameter = st.sidebar.selectbox("Thông số", params,
+                                 index=params.index(qp.get("param", "dissolved_oxygen")) if qp.get("param", "dissolved_oxygen") in params else 0,
                                  format_func=lambda v: f"{var_info[v]['label']} ({var_info[v]['unit']})")
-days = st.sidebar.slider("Cửa sổ thời gian (ngày dữ liệu)", 1, 30, 3)
+days = st.sidebar.slider("Cửa sổ thời gian (ngày dữ liệu)", 1, 30, int(qp.get("days", 3)) if str(qp.get("days", "3")).isdigit() else 3)
 auto = st.sidebar.toggle("Tự làm mới mỗi 10 giây", value=True)
 st.sidebar.caption(f"API: {API}")
 

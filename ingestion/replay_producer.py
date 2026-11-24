@@ -99,6 +99,7 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--late-fraction", type=float, default=0.0, help="tỉ lệ message bị giữ lại rồi gửi trễ")
     ap.add_argument("--late-max-seconds", type=float, default=3.0, help="độ trễ tối đa (giây thực) của message trễ")
     ap.add_argument("--duplicate-fraction", type=float, default=0.0, help="tỉ lệ message bị gửi 2 lần")
+    ap.add_argument("--late-log", help="ghi danh sách message bị làm trễ ra CSV (để kiểm chứng watermark)")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--dry-run", action="store_true", help="in vài message rồi thoát, không cần Kafka")
     args = ap.parse_args(argv)
@@ -131,7 +132,12 @@ def main(argv: list[str] | None = None) -> None:
     rng = random.Random(args.seed)
     if args.late_fraction > 0:  # message trễ: lùi thời điểm gửi => đến Kafka SAU các message mới hơn
         late = np.array([rng.random() < args.late_fraction for _ in range(n)])
-        due = due + late * np.array([rng.uniform(0.5, 1.0) * args.late_max_seconds for _ in range(n)])
+        delay = late * np.array([rng.uniform(0.5, 1.0) * args.late_max_seconds for _ in range(n)])
+        due = due + delay
+        if args.late_log:
+            speed = args.speedup if not args.rate else float("nan")
+            pd.DataFrame({"station_id": df["station_id"], "ts": df["ts"], "delay_s": delay,
+                          "event_delay_min": delay * speed / 60})[late].to_csv(args.late_log, index=False)
     order = np.argsort(due, kind="stable")
     dup = {i for i in range(n) if rng.random() < args.duplicate_fraction} if args.duplicate_fraction > 0 else set()
 

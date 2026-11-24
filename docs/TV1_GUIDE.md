@@ -17,10 +17,12 @@ end-to-end; việc của bạn là nắm vững, chạy lại trên máy mình, 
 | 5 | Serving: PostgreSQL + FastAPI | `deploy/postgres/init.sql`, `api/main.py` | ✅ 12 endpoint |
 | 6 | Dashboard khung | `dashboard/app.py` | ✅ 4 tab — 🔧 TV2 thêm trang giám sát/WQI |
 | 7 | Triển khai Docker Compose | `docker-compose.yml`, `docker/Dockerfile` | ✅ 1 lệnh chạy cả hệ thống |
-| 8 | Benchmark hiệu năng | `benchmarks/` | ✅ script + kết quả mẫu (máy 4 vCPU) — 🔧 chạy lại trên máy nhóm |
-| 9 | Tích hợp model TV3/TV4 | `wq/models/registry.py`, biến `WQ_IMPUTER`/`WQ_FORECASTER` | ✅ cơ chế sẵn — 🔧 tuần 3 thay baseline bằng model thật |
-| 10 | Báo cáo Ch.1, 4, 5 (hiệu năng), 6 | `docs/report/` | ✅ bản nháp — 🔧 điền số liệu cuối |
-| 11 | Unit test | `tests/` (20 test) | ✅ pass |
+| 8 | Benchmark hiệu năng | `benchmarks/` | ✅ script + kết quả mẫu (máy 4 vCPU, xem `benchmarks/README.md`) — 🔧 chạy lại trên máy nhóm |
+| 9 | Kiểm chứng tính đúng (trễ/trùng/chịu lỗi) | `scripts/verify_stream.py` | ✅ đã chạy: 0 mất, 0 trùng sau khi kill Spark giữa chừng — 🔧 chạy lại khi demo |
+| 10 | Tích hợp model TV3/TV4 | `wq/models/registry.py`, biến `WQ_IMPUTER`/`WQ_FORECASTER` | ✅ cơ chế sẵn — 🔧 tuần 3 thay baseline bằng model thật |
+| 11 | Báo cáo Ch.1, 4, 5 (hiệu năng), 6 | `docs/report/` | ✅ bản nháp có số liệu mẫu — 🔧 thay bằng số đo trên máy nhóm + kết quả TV3/TV4 |
+| 12 | Unit test | `tests/` (20 test) | ✅ pass |
+| 13 | Ảnh chụp cho báo cáo | `docs/images/` | ✅ dashboard, API, Spark UI (bản đồ trống do mạng máy thử) — 🔧 chụp lại trên máy nhóm |
 
 ---
 
@@ -120,9 +122,9 @@ rồi `docker compose up -d stream-processor producer`.
 - [ ] Hướng dẫn TV2/TV3/TV4 chạy `make test` và đọc dữ liệu silver bằng pandas (mục 2 của `data_contract.md`).
 
 ### Tuần 2 — hoàn thiện streaming & vận hành
-- [ ] Thử nghiệm khả năng chịu lỗi (mục 6, bước 4) và ghi lại kết quả (số dòng trước/sau, không mất/không trùng).
-- [ ] Kiểm chứng xử lý dữ liệu trễ/trùng: đếm số bản ghi Kafka vs số dòng trong `measurements`
-      (xem truy vấn SQL ở mục 7) và giải thích chênh lệch.
+- [ ] Thử nghiệm khả năng chịu lỗi (mục 6, bước 4) và kiểm chứng tính đúng bằng `scripts/verify_stream.py`
+      (so sánh dữ liệu lẽ ra phải đến – message trong Kafka – dòng trong PostgreSQL; phân tích bản ghi trễ bị
+      watermark loại). Ghi kết quả vào Ch.5 mục 5.6. Cách chạy ở mục 7.
 - [ ] (Tùy chọn, điểm cộng) Dead-letter: ghi message hỏng ra topic `wq.sensor.dlq` thay vì bỏ qua.
 - [ ] (Tùy chọn) Job compaction gộp file nhỏ trong `data/lake/stream`.
 
@@ -182,7 +184,7 @@ Kiểm tra: log `stream-processor` in `imputer=...joblib`; endpoint `/stations/{
 
 ## 6. Kịch bản demo khi bảo vệ (~5 phút)
 
-1. `docker compose ps` — 10 container: Kafka, PostgreSQL, Spark master + 2 worker, streaming, producer, API, dashboard.
+1. `docker compose ps` — 9 container đang chạy (Kafka, PostgreSQL, Spark master + 2 worker, streaming, producer, API, dashboard) + 2 job khởi tạo đã hoàn tất (kafka-init, data-init).
 2. Kafka UI: topic `wq.sensor.raw`, 6 partition, message JSON. Spark Master UI: 2 worker, ứng dụng `wq-stream-processor`.
 3. Dashboard: tab Giám sát (DO thay đổi theo chu kỳ ngày, điểm được điền khuyết, ngưỡng cảnh báo, dự báo),
    tab Dự báo (độ chính xác online), tab Pipeline (độ trễ p50/p95, throughput).
@@ -208,7 +210,34 @@ make plots
 ```
 
 Luôn ghi lại **cấu hình máy** (CPU, RAM, Docker resources) cạnh bảng kết quả; chạy mỗi cấu hình ≥ 3 lần nếu có
-thời gian và báo cáo trung vị. Truy vấn kiểm tra tính đúng (dùng cho mục 6 và tuần 2):
+thời gian và báo cáo trung vị.
+
+**Kiểm chứng tính đúng (late/duplicate/chịu lỗi)** — phát 3 ngày dữ liệu có 1% trễ, 0,5% trùng, giữa chừng "giết"
+tiến trình xử lý rồi bật lại, sau đó đối chiếu:
+
+```bash
+./scripts/reset_stream.sh
+```
+
+```bash
+docker compose up -d stream-processor
+```
+
+```bash
+docker compose run --rm --no-deps producer python -m ingestion.replay_producer --start 2025-07-01 --end 2025-07-04 --speedup 3600 --late-fraction 0.01 --duplicate-fraction 0.005 --late-log /app/data/late.csv
+```
+
+Trong lúc producer đang chạy, ở terminal khác: `docker compose kill stream-processor`, chờ ~20 giây,
+`docker compose up -d stream-processor`. Khi producer xong và streaming đã xử lý hết:
+
+```bash
+docker compose run --rm --no-deps producer python -m scripts.verify_stream --start 2025-07-01 --end 2025-07-04 --late-log /app/data/late.csv
+```
+
+Kết quả mong đợi: "trùng khóa: 0", "Thừa: 0", "Thiếu KHÔNG giải thích được bởi dữ liệu trễ: 0" — tức không mất,
+không trùng dữ liệu dù tiến trình bị dừng đột ngột; phần thiếu chỉ là các bản ghi trễ hơn watermark.
+
+Truy vấn nhanh khác:
 
 ```bash
 docker compose exec postgres psql -U wq -d wq -c "SELECT count(*), count(DISTINCT (station_id, ts)), min(ts), max(ts) FROM measurements;"

@@ -5,13 +5,15 @@
 ## 6.1 Kết quả đạt được
 
 - Xây dựng thành công pipeline Big Data end-to-end cho bài toán giám sát, điền khuyết và dự báo chất lượng nước
-  trên dữ liệu cảm biến thật của USGS ([10] trạm, [5,96] triệu giá trị đo, 2023–2025), triển khai bằng một lệnh
+  trên dữ liệu cảm biến thật của USGS (10 trạm, 5,96 triệu giá trị đo, 2023–2025), triển khai bằng một lệnh
   Docker Compose với Kafka, cụm Spark (1 master, 2 worker), PostgreSQL, FastAPI và Streamlit.
 - Luồng xử lý thời gian thực bằng Spark Structured Streaming xử lý theo thời gian sự kiện với watermark, khử trùng
   lặp, tổng hợp theo cửa sổ, ghi idempotent và khôi phục từ checkpoint; điền khuyết và dự báo được thực hiện trực
-  tuyến, phân tán theo trạm. Độ trễ end-to-end ở tải demo: p50 ≈ [4] s, p95 ≈ [6] s (trigger 5 s).
-- Thực nghiệm hiệu năng định lượng: ETL tăng tốc [2,65]× khi tăng từ 1 lên 4 core; streaming duy trì được
-  [...] bản ghi/giây với độ trễ p95 [...] s trên máy [4] vCPU.
+  tuyến, phân tán theo trạm. Độ trễ end-to-end ở tải demo: p50 ≈ 4 s, p95 ≈ 6 s (trigger 5 s, có ML). Kiểm chứng
+  với dữ liệu trễ/trùng và dừng đột ngột tiến trình xử lý: không mất, không trùng bản ghi.
+- Thực nghiệm hiệu năng định lượng (máy 4 vCPU): ETL tăng tốc 2,84× khi tăng từ 1 lên 4 core (23,8 triệu giá trị),
+  xử lý 47,7 triệu giá trị trong 112 s; streaming bền vững tới 8.000 message/giây với độ trễ p95 4 s, thông lượng
+  tối đa ≈ 18.000 bản ghi/giây.
 - [TV3] Phương pháp điền khuyết tốt nhất: [...], giảm RMSE [...]% so với LOCF ở tỉ lệ thiếu 20% liên tục.
 - [TV4] Mô hình dự báo tốt nhất: [...]; dự báo trên dữ liệu đã điền khuyết tốt hơn dữ liệu còn thiếu [...]%.
 
