@@ -67,7 +67,9 @@ def parse_messages(kafka_df: DataFrame) -> DataFrame:
     parsed = kafka_df.select(F.from_json(F.col("value").cast("string"), SENSOR_MESSAGE_SCHEMA).alias("m"),
                              F.col("timestamp").alias("kafka_ts"))
     return (parsed.select("m.*", "kafka_ts")
-            .withColumn("event_time", F.to_timestamp("event_time"))
+            # try_to_timestamp: chuỗi thời gian hỏng => NULL (Spark 4 bật ANSI mode: to_timestamp sẽ NÉM LỖI
+            # và làm sập cả streaming query chỉ vì 1 message xấu)
+            .withColumn("event_time", F.try_to_timestamp("event_time"))
             .withColumn("producer_ts", F.timestamp_millis("producer_ts"))
             # message hỏng (JSON lỗi, thiếu khóa) bị loại; có thể ghi ra dead-letter topic nếu cần
             .where(F.col("station_id").isNotNull() & F.col("event_time").isNotNull()))

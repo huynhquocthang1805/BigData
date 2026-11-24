@@ -13,7 +13,8 @@ data/*
 !data/.gitkeep
 models/*
 !models/.gitkeep
-!models/README.md
+!models/*.md
+!models/*.csv
 spark-warehouse/
 metastore_db/
 derby.log

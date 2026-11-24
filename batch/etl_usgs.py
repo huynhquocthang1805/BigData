@@ -40,8 +40,9 @@ def read_raw(spark: SparkSession, raw_path: str) -> DataFrame:
 def to_bronze(raw: DataFrame, scale: int = 1) -> DataFrame:
     code_to_name = F.create_map(*[F.lit(x) for kv in contracts.USGS_CODE_TO_NAME.items() for x in kv])
     df = (
-        raw.withColumn("ts", F.to_timestamp("time"))
-        .withColumn("value", F.col("value").cast("double"))
+        # try_*: giá trị hỏng => NULL thay vì ném lỗi (Spark 4 mặc định bật ANSI mode)
+        raw.withColumn("ts", F.try_to_timestamp("time"))
+        .withColumn("value", F.col("value").try_cast("double"))
         .withColumn("variable", code_to_name[F.col("parameter_code")])
         .where(F.col("ts").isNotNull() & F.col("variable").isNotNull())
         .select("station_id", "parameter_code", "variable", "ts", "value", "approval_status", "qualifier")
@@ -63,7 +64,7 @@ def to_silver(bronze: DataFrame, start: str, end: str) -> DataFrame:
     # 2) Pivot long -> wide: mỗi dòng = 1 trạm x 1 mốc thời gian
     wide = (aligned.groupBy("station_id", "ts")
             .pivot("variable", contracts.VARIABLE_NAMES)
-            .agg(F.avg("value")))
+            .agg(F.round(F.avg("value"), 4)))
     # 3) QC phạm vi vật lý: ngoài khoảng => NULL + bật bit trong qc_flags (dùng CHUNG với streaming)
     wide = apply_range_qc(wide)
     # 4) Lưới thời gian đầy đủ [start, end) cho MỌI trạm => mốc không có dữ liệu thành dòng NULL

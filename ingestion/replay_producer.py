@@ -109,6 +109,8 @@ def main(argv: list[str] | None = None) -> None:
     df = load_replay_frame(args.lake, start, end, args.stations)
     if df.empty:
         sys.exit(f"Không có dữ liệu silver trong [{start}, {end}). Hãy chạy batch ETL trước.")
+    if args.limit:  # chỉ chuẩn bị đúng số bản ghi cần gửi (nạp nhanh hơn khi benchmark)
+        df = df.iloc[: math.ceil(args.limit / max(1, args.replicate))].reset_index(drop=True)
     bodies = serialize_bodies(df)
     # epoch giây, không phụ thuộc độ phân giải (ns/us) mà pyarrow trả về
     event_s = ((df["ts"] - pd.Timestamp("1970-01-01", tz="UTC")) // pd.Timedelta(seconds=1)).to_numpy()

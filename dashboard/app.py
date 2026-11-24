@@ -91,8 +91,11 @@ def main_view():
                 fig.add_trace(go.Scatter(x=filled.ts, y=filled[parameter], name="Điểm được điền", mode="markers",
                                          marker=dict(color=COLORS["imputed"], size=6)))
             if not raw.empty:
+                # Đưa về lưới 15 phút để KHOẢNG TRỐNG hiện ra là chỗ đứt (không nối thẳng qua chỗ thiếu)
+                grid = pd.date_range(raw.ts.min(), raw.ts.max(), freq=f"{meta['freq_minutes']}min")
+                raw = raw.set_index("ts").reindex(grid).rename_axis("ts").reset_index()
                 fig.add_trace(go.Scatter(x=raw.ts, y=raw[parameter], name="Quan trắc (đã QC)", mode="lines",
-                                         line=dict(color=COLORS["raw"])))
+                                         line=dict(color=COLORS["raw"]), connectgaps=False))
             if parameter in meta["forecast_targets"]:
                 pred = frame(api("/predictions/latest", station_id=station_id, target=parameter),
                              ("issued_at", "target_ts"))
@@ -109,14 +112,18 @@ def main_view():
             hourly = frame(api("/measurements/hourly", station_id=station_id, parameter=parameter, days=days),
                            ("window_start", "window_end"))
             if not hourly.empty:
-                st.caption("Tổng hợp theo giờ (Spark window 1h + watermark): trung bình và tỉ lệ thiếu")
-                fig2 = go.Figure([
-                    go.Scatter(x=hourly.window_start, y=hourly.avg_value, name="Trung bình giờ", mode="lines"),
-                    go.Bar(x=hourly.window_start, y=hourly.missing_rate, name="Tỉ lệ thiếu", yaxis="y2", opacity=0.4)])
-                fig2.update_layout(height=260, margin=dict(l=10, r=10, t=10, b=10),
-                                   yaxis2=dict(overlaying="y", side="right", range=[0, 1], title="missing"),
-                                   legend=dict(orientation="h", y=-0.25))
-                st.plotly_chart(fig2, width="stretch")
+                st.caption("Tổng hợp theo giờ do Spark tính (window 1h + watermark)")
+                h1, h2 = st.columns(2)
+                fig_avg = go.Figure(go.Scatter(x=hourly.window_start, y=hourly.avg_value, mode="lines",
+                                               line=dict(color=COLORS["raw"], width=2)))
+                fig_avg.update_layout(title="Trung bình theo giờ", height=240, margin=dict(l=10, r=10, t=40, b=10),
+                                      yaxis_title=var_info[parameter]["unit"])
+                h1.plotly_chart(fig_avg, width="stretch")
+                fig_miss = go.Figure(go.Bar(x=hourly.window_start, y=hourly.missing_rate * 100,
+                                            marker_color=COLORS["imputed"]))
+                fig_miss.update_layout(title="Tỉ lệ thiếu theo giờ (%)", height=240, margin=dict(l=10, r=10, t=40, b=10),
+                                       yaxis=dict(range=[0, 100], title="%"))
+                h2.plotly_chart(fig_miss, width="stretch")
 
     with tab_pred:
         target = meta["forecast_targets"][0]
