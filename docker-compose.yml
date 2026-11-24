@@ -1,0 +1,227 @@
+# Water Quality Big Data Pipeline - triển khai toàn bộ hệ thống trên 1 máy bằng Docker Compose.
+#
+#   docker compose build            # build image dự án (1 lần, ~5-10 phút)
+#   docker compose up -d            # chạy tất cả: tải dữ liệu -> ETL -> Kafka -> Spark Streaming -> API -> Dashboard
+#   docker compose logs -f stream-processor producer
+#   docker compose down             # dừng (thêm -v để xóa cả dữ liệu PostgreSQL)
+#
+# Cổng: Dashboard 8501 | API 8000 (/docs) | Spark Master UI 8080 | Workers 8081-8082 | Spark app UI 4040
+#       Kafka (từ máy host) localhost:9094 | PostgreSQL localhost:5432 | Kafka UI 8090 (profile tools)
+
+x-wq-env: &wq-env
+  TZ: UTC
+  WQ_KAFKA_BOOTSTRAP: kafka:9092
+  WQ_TOPIC_RAW: wq.sensor.raw
+  WQ_PG_HOST: postgres
+  WQ_PG_PORT: "5432"
+  WQ_PG_DB: wq
+  WQ_PG_USER: wq
+  WQ_PG_PASSWORD: ${WQ_PG_PASSWORD:-wq}
+  WQ_RAW_PATH: /app/data/raw/usgs
+  WQ_LAKE_PATH: /app/data/lake
+  WQ_CHECKPOINT_PATH: /app/data/checkpoints
+  WQ_STATIONS_FILE: /app/config/stations.json
+  WQ_IMPUTER: ${WQ_IMPUTER:-locf}
+  WQ_FORECASTER: ${WQ_FORECASTER:-seasonal_naive}
+
+x-wq-app: &wq-app
+  image: wq-bigdata:latest
+  build:
+    context: .
+    dockerfile: docker/Dockerfile
+  environment:
+    <<: *wq-env
+  # Mount cả repo: sửa code trên máy là container thấy ngay (chỉ cần restart service)
+  volumes:
+    - ./:/app
+  restart: "no"
+
+services:
+  # ---------------------------------------------------------------- Kafka (KRaft, không cần ZooKeeper)
+  kafka:
+    image: apache/kafka:4.3.2
+    hostname: kafka
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 6
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_HEAP_OPTS: "-Xms512m -Xmx512m"
+    volumes:
+      - kafkadata:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+
+  kafka-init:  # tạo topic với 6 partition (song song hóa đọc trong Spark)
+    image: apache/kafka:4.3.2
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - >-
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists
+        --topic wq.sensor.raw --partitions 6 --replication-factor 1 --config retention.ms=604800000 &&
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --describe --topic wq.sensor.raw
+    restart: "no"
+
+  # ---------------------------------------------------------------- PostgreSQL (serving DB)
+  postgres:
+    image: postgres:16.15
+    environment:
+      POSTGRES_DB: wq
+      POSTGRES_USER: wq
+      POSTGRES_PASSWORD: ${WQ_PG_PASSWORD:-wq}
+      TZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./deploy/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wq -d wq"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # ---------------------------------------------------------------- Spark standalone cluster
+  spark-master:
+    <<: *wq-app
+    hostname: spark-master
+    command: ["spark-class", "org.apache.spark.deploy.master.Master",
+              "--host", "spark-master", "--port", "7077", "--webui-port", "8080"]
+    environment:
+      <<: *wq-env
+      SPARK_DAEMON_MEMORY: 512m
+    ports:
+      - "8080:8080"
+
+  spark-worker-1: &spark-worker
+    <<: *wq-app
+    hostname: spark-worker-1
+    command: ["spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077",
+              "--cores", "${SPARK_WORKER_CORES:-2}", "--memory", "${SPARK_WORKER_MEMORY:-2g}", "--webui-port", "8081"]
+    environment:
+      <<: *wq-env
+      SPARK_DAEMON_MEMORY: 512m
+    depends_on:
+      - spark-master
+    ports:
+      - "8081:8081"
+
+  spark-worker-2:
+    <<: *spark-worker
+    hostname: spark-worker-2
+    command: ["spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077",
+              "--cores", "${SPARK_WORKER_CORES:-2}", "--memory", "${SPARK_WORKER_MEMORY:-2g}", "--webui-port", "8082"]
+    ports:
+      - "8082:8082"
+
+  # ---------------------------------------------------------------- Dữ liệu: tải USGS + batch ETL (chạy 1 lần)
+  data-init:
+    <<: *wq-app
+    command:
+      - bash
+      - -c
+      - >-
+        python -m ingestion.download_usgs &&
+        if [ -d /app/data/lake/silver/measurements ]; then echo 'silver đã có -> bỏ qua ETL';
+        else python -m batch.etl_usgs --master 'local[2]'; fi
+
+  # ---------------------------------------------------------------- Streaming (Spark driver, chạy job trên cluster)
+  stream-processor:
+    <<: *wq-app
+    hostname: stream-processor
+    command: ["python", "-m", "streaming.stream_processor"]
+    environment:
+      <<: *wq-env
+      WQ_SPARK_MASTER: spark://spark-master:7077
+      WQ_SPARK_DRIVER_HOST: stream-processor
+      WQ_CORES_MAX: "${WQ_STREAM_CORES:-4}"
+      WQ_EXECUTOR_CORES: "1"
+      WQ_EXECUTOR_MEMORY: 1g
+      WQ_DRIVER_MEMORY: 1g
+      WQ_SHUFFLE_PARTITIONS: "4"
+      WQ_TRIGGER: "5 seconds"
+      WQ_LAKE_TRIGGER: "30 seconds"
+      WQ_WATERMARK: "2 hours"
+      WQ_STARTING_OFFSETS: earliest
+    ports:
+      - "4040:4040"
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      spark-worker-1:
+        condition: service_started
+      spark-worker-2:
+        condition: service_started
+    restart: on-failure
+
+  # ---------------------------------------------------------------- Producer: phát lại giai đoạn test (2025-07 -> 2025-12)
+  producer:
+    <<: *wq-app
+    command: ["python", "-m", "ingestion.replay_producer", "--split", "test",
+              "--speedup", "${REPLAY_SPEEDUP:-3600}", "--late-fraction", "0.01", "--duplicate-fraction", "0.005"]
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      data-init:
+        condition: service_completed_successfully
+
+  # ---------------------------------------------------------------- Serving
+  api:
+    <<: *wq-app
+    command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  dashboard:
+    <<: *wq-app
+    command: ["streamlit", "run", "dashboard/app.py", "--server.port", "8501",
+              "--server.address", "0.0.0.0", "--server.headless", "true", "--browser.gatherUsageStats", "false"]
+    environment:
+      <<: *wq-env
+      WQ_API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------- Công cụ tùy chọn: docker compose --profile tools up -d
+  kafka-ui:
+    image: kafbat/kafka-ui:v1.4.2
+    profiles: ["tools"]
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports:
+      - "8090:8080"
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  kafkadata:

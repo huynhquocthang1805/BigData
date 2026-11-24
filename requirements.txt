@@ -1,0 +1,29 @@
+# Phiên bản được ghim (pin) để cả nhóm và Docker image dùng chung một môi trường.
+# Python 3.12, Java 17/21 (Spark 4.x).
+
+# --- Spark & xử lý dữ liệu ---
+pyspark==4.2.1
+pandas==2.3.3
+numpy==2.3.5
+pyarrow==25.0.1
+
+# --- Học máy (TV3/TV4 bổ sung thư viện mô hình của mình vào đây, ghim version) ---
+scikit-learn==1.9.1
+xgboost-cpu==3.4.1
+joblib==1.6.0
+
+# --- Kafka & cơ sở dữ liệu ---
+confluent-kafka==2.16.1
+psycopg[binary]==3.3.7
+psycopg-pool==3.3.3
+
+# --- Serving: API + dashboard ---
+fastapi==0.162.0
+uvicorn==0.54.0
+streamlit==1.66.1
+plotly==6.9.0
+requests==2.34.2
+
+# --- Benchmark & kiểm thử ---
+matplotlib==3.11.2
+pytest==9.1.1

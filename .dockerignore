@@ -1,0 +1,12 @@
+.git
+data
+models/*
+!models/.gitkeep
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.venv
+venv
+notebooks/.ipynb_checkpoints
+benchmarks/results
+docs/report/*.pdf

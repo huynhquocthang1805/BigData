@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Dữ liệu & artefact (KHÔNG commit dữ liệu lớn lên git)
+data/*
+!data/sample/
+!data/.gitkeep
+models/*
+!models/.gitkeep
+!models/README.md
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Benchmark: chỉ commit CSV kết quả + hình, không commit log tạm
+benchmarks/results/tmp/
+
+# Môi trường
+.env
+.DS_Store
+.idea/
+.vscode/

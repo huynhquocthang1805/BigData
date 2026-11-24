@@ -1,0 +1,114 @@
+{
+  "contract_version": "1.0.0",
+  "source": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/continuous",
+  "parameters": {
+    "water_temp": "00010",
+    "specific_conductance": "00095",
+    "ph": "00400",
+    "dissolved_oxygen": "00300",
+    "turbidity": "63680",
+    "discharge": "00060"
+  },
+  "stations": [
+    {
+      "station_id": "USGS-05586300",
+      "name": "ILLINOIS RIVER AT FLORENCE, IL",
+      "state": "Illinois",
+      "site_type": "Stream",
+      "latitude": 39.63275,
+      "longitude": -90.6076666666667,
+      "drainage_area_sqmi": 26870.0,
+      "huc": "071300110805"
+    },
+    {
+      "station_id": "USGS-03612600",
+      "name": "OHIO RIVER AT OLMSTED, IL",
+      "state": "Illinois",
+      "site_type": "Stream",
+      "latitude": 37.1792186733202,
+      "longitude": -89.0584040037475,
+      "drainage_area_sqmi": 203000.0,
+      "huc": "05140206"
+    },
+    {
+      "station_id": "USGS-07020850",
+      "name": "Mississippi River at Cape Girardeau, MO",
+      "state": "Missouri",
+      "site_type": "Stream",
+      "latitude": 37.3018888888889,
+      "longitude": -89.518,
+      "drainage_area_sqmi": null,
+      "huc": "071401050503"
+    },
+    {
+      "station_id": "USGS-01458500",
+      "name": "Delaware River at Frenchtown NJ",
+      "state": "New Jersey",
+      "site_type": "Stream",
+      "latitude": 40.5261111111111,
+      "longitude": -75.065,
+      "drainage_area_sqmi": 6420.0,
+      "huc": "020401050904"
+    },
+    {
+      "station_id": "USGS-01400500",
+      "name": "Raritan River at Manville NJ",
+      "state": "New Jersey",
+      "site_type": "Stream",
+      "latitude": 40.5555555555556,
+      "longitude": -74.5827777777778,
+      "drainage_area_sqmi": 490.0,
+      "huc": "020301050501"
+    },
+    {
+      "station_id": "USGS-04231600",
+      "name": "GENESEE RIVER AT FORD STREET BRIDGE, ROCHESTER NY",
+      "state": "New York",
+      "site_type": "Stream",
+      "latitude": 43.1417222222222,
+      "longitude": -77.6163055555556,
+      "drainage_area_sqmi": 2474.0,
+      "huc": "041300030704"
+    },
+    {
+      "station_id": "USGS-05082500",
+      "name": "RED RIVER OF THE NORTH AT GRAND FORKS, ND",
+      "state": "North Dakota",
+      "site_type": "Stream",
+      "latitude": 47.926944,
+      "longitude": -97.028889,
+      "drainage_area_sqmi": 30100.0,
+      "huc": "090203010705"
+    },
+    {
+      "station_id": "USGS-08069500",
+      "name": "W Fk San Jacinto Rv nr Humble, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 30.0271638542905,
+      "longitude": -95.2579887732518,
+      "drainage_area_sqmi": 1741.0,
+      "huc": "120401010501"
+    },
+    {
+      "station_id": "USGS-14211010",
+      "name": "CLACKAMAS RIVER NEAR OREGON CITY, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 45.3792874273003,
+      "longitude": -122.577313403107,
+      "drainage_area_sqmi": 940.0,
+      "huc": "170900110607"
+    },
+    {
+      "station_id": "USGS-02336300",
+      "name": "PEACHTREE CREEK AT ATLANTA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.8203055555556,
+      "longitude": -84.4076388888889,
+      "drainage_area_sqmi": 86.8,
+      "huc": "03130001"
+    }
+  ]
+}
