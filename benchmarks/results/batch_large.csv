@@ -5,3 +5,6 @@ spark,cluster,hdfs,4,56,34180940,5892096,153.71,222373,,4,
 pandas,single-process,local,1,103,,,,,11278,4,"FAILED sau 105s (giới hạn 12 GB): numpy._core._exceptions._ArrayMemoryError: Unable to allocate 473. MiB for an array with shape (61955481,) and data type"
 spark,local,local,4,103,61955481,10837248,168.13,368497,,4,
 spark,cluster,hdfs,4,103,61955481,10837248,238.03,260284,,4,
+pandas,single-process,local,1,235,,,,,12056,4,FAILED sau 88s (giới hạn 12 GB): bị dừng bởi tín hiệu 11
+spark,local,local,4,235,129664155,24725760,380.57,340710,,4,
+spark,cluster,hdfs,4,235,129664155,24725760,541.74,239348,,4,

@@ -187,8 +187,10 @@ def plot_large(res: Path, out: Path) -> None:
                 ok = g[~g.failed]
                 if ok.empty:  # không chạy xong (vd. hết bộ nhớ): không vẽ cột, ghi rõ lý do
                     r = g.iloc[-1]
-                    ax.annotate(f"không chạy được: hết bộ nhớ (RAM đỉnh {vn(r.peak_rss_mb / 1024)} GB)",
-                                (0, pos), xytext=(6, 0), textcoords="offset points", va="center", fontsize=9,
+                    x0 = tmax * 0.012  # ô màu nhận diện quy mô dữ liệu (chữ giữ màu mực)
+                    ax.plot([x0], [pos], marker="s", ms=7, color=SERIES[j], linestyle="none", clip_on=False, zorder=3)
+                    ax.annotate(f"{n} trạm: không chạy được, hết bộ nhớ (RAM đỉnh {vn(r.peak_rss_mb / 1024)} GB)",
+                                (x0, pos), xytext=(9, 0), textcoords="offset points", va="center", fontsize=9,
                                 color=INK)
                     continue
                 t = ok.total_s.median()

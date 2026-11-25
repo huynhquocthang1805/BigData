@@ -17,10 +17,12 @@
 - Thực nghiệm hiệu năng định lượng (máy 4 vCPU): ETL tăng tốc 2,84× khi tăng từ 1 lên 4 core (23,8 triệu giá trị),
   xử lý 47,7 triệu giá trị trong 112 s; streaming bền vững tới 8.000 message/giây với độ trễ p95 4 s, thông lượng
   tối đa ≈ 18.000 bản ghi/giây.
-- Chạy được trên dữ liệu thật quy mô lớn: 103 trạm USGS, 62 triệu giá trị thô, lưu trên HDFS và xử lý trên cụm
-  Spark trong 238 s (Spark local 168 s). Ở khối dữ liệu này pandas hết bộ nhớ và không chạy xong (đã dùng 11 GB),
-  trong khi Spark chạy trong giới hạn driver 6 GB; ở 34 triệu giá trị pandas còn nhanh hơn nhưng đã dùng 9,4 GB.
-  Khoảng cách giữa cụm và local thu hẹp dần: 1,89 lần (6 triệu giá trị), 1,47 lần (34 triệu), 1,42 lần (62 triệu).
+- Chạy được trên dữ liệu thật quy mô lớn: đủ 235 trạm USGS (34 bang, Puerto Rico và British Columbia), 130 triệu
+  giá trị thô, lưu trên HDFS và xử lý trên cụm Spark trong 542 s (Spark local 381 s). Từ 62 triệu giá trị trở lên
+  pandas hết bộ nhớ và không chạy xong (đã dùng 11–11,8 GB), trong khi Spark chạy trong giới hạn driver 6 GB; ở
+  34 triệu giá trị pandas còn nhanh hơn nhưng đã dùng 9,4 GB. Dữ liệu tăng 3,8 lần thì thời gian Spark tăng
+  3,5–3,6 lần. Khoảng cách giữa cụm và local thu hẹp rồi ổn định: 1,89 lần (6 triệu giá trị), 1,47 lần (34 triệu),
+  1,42 lần (62 và 130 triệu).
 - Streaming có điền khuyết và dự báo không mất bản ghi nào với 10, 50 và 100 trạm; số trạm tăng 10 lần thì độ trễ
   p50 tăng 43% (5,5 → 7,9 s ở 1.000 msg/s).
 - [TV3] Phương pháp điền khuyết tốt nhất: [...], giảm RMSE [...]% so với LOCF ở tỉ lệ thiếu 20% liên tục.
@@ -31,12 +33,14 @@
 1. Cụm Spark, HDFS và Kafka chạy trên **một máy vật lý** (các container chia sẻ CPU và ổ đĩa), nên kết quả mở rộng
    theo chiều ngang chỉ mang tính chỉ dẫn: cụm chậm hơn local, ghi HDFS chậm hơn ổ đĩa cục bộ 2,5 lần; ở quy mô dữ
    liệu chuẩn, pandas đơn tiến trình còn nhanh hơn Spark (đã nêu trung thực ở chương 5).
-2. Lúc đo, bộ dữ liệu lớn mới có 103 trên 235 trạm do API của USGS giới hạn tần suất với người dùng không có API key;
-   downloader tải tiếp được, cần chạy thêm vài giờ hoặc dùng API key.
+2. Bộ dữ liệu lớn (235 trạm, 410 MB nén) phải tải nhiều lượt trong khoảng 4 giờ vì API của USGS giới hạn tần suất
+   với người dùng không có API key; muốn thêm trạm cần API key. Ở khối 130 triệu giá trị, thông lượng Spark giảm
+   7–8% so với khối 62 triệu; số partition shuffle chưa được tinh chỉnh theo kích thước dữ liệu.
 3. Dữ liệu thời gian thực được **mô phỏng bằng phát lại** dữ liệu lịch sử, chưa kết nối nguồn cảm biến trực tiếp.
 4. Kafka một broker (replication factor 1) — chưa chịu được lỗi broker; PostgreSQL một nút; HDFS một NameNode
    (chưa bật High Availability).
-5. Data lake gồm nhiều tệp nhỏ (block trung bình dưới 1 MB so với block 128 MB của HDFS), chưa có bước gộp tệp.
+5. Data lake gồm nhiều tệp nhỏ (15.680 tệp, block trung bình khoảng 0,1 MB so với block 128 MB của HDFS), chưa
+   có bước gộp tệp.
 6. Dự báo trực tuyến được phát hành theo từng micro-batch, nên tần suất phát hành phụ thuộc tốc độ phát lại.
 7. Chưa có quản lý vòng đời mô hình (MLflow) và giám sát hạ tầng (Prometheus/Grafana).
 

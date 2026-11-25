@@ -139,56 +139,62 @@ phục không phụ thuộc thư mục chia sẻ cục bộ, điều kiện đ�
 ## 5.8 Dữ liệu thật quy mô lớn trên HDFS
 
 **Thiết lập.** Bộ trạm lớn (danh sách 235 trạm) được tải dần vì USGS giới hạn tần suất với người dùng không có
-API key, nên benchmark được chạy trên hai lần chốt dữ liệu:
+API key, nên benchmark được chạy trên ba lần chốt dữ liệu; lần chốt 3 có đủ 235 trạm:
 
 | Lần chốt | Trạm có dữ liệu | Tệp CSV gzip | Dung lượng nén | Giá trị thô | Dòng silver |
 |---|---|---|---|---|---|
 | 1 | 56 (15 bang và Puerto Rico) | 970 | 108,6 MB | 34.180.940 | 5.892.096 |
 | 2 | 103 (20 bang và Puerto Rico) | 1.824 | 196,3 MB | 61.955.481 | 10.837.248 |
+| 3 | 235 (34 bang, Puerto Rico và British Columbia) | 4.206 | 410,1 MB | 129.664.155 | 24.725.760 |
 
 Mỗi lần chốt: tạm dừng bộ tải để dữ liệu không đổi trong lúc đo, nạp lên HDFS (`batch.ingest_hdfs --overwrite`),
 rồi chạy cùng job ETL như mục 5.4 trên cùng máy 4 vCPU, 15,7 GB RAM (`benchmarks/bench_large.py`, kết quả trong
-`benchmarks/results/batch_large.csv`). Ở lần chốt 2, tiến trình pandas được giới hạn 12 GB bộ nhớ
+`benchmarks/results/batch_large.csv`). Từ lần chốt 2, tiến trình pandas được giới hạn 12 GB bộ nhớ
 (`--pandas-mem-gb 12`, xấp xỉ RAM còn trống khi Kafka, HDFS, Spark và PostgreSQL đang chạy): nếu thiếu bộ nhớ,
-pandas dừng với `MemoryError` thay vì kích hoạt OOM killer của hệ điều hành và làm sập các dịch vụ khác.
+pandas dừng trong giới hạn đó thay vì kích hoạt OOM killer của hệ điều hành và làm sập các dịch vụ khác.
 
 **Bảng 5.v — ETL trên dữ liệu thật**
 
-| Cấu hình | 56 trạm, 34,2 triệu giá trị | 103 trạm, 62,0 triệu giá trị |
-|---|---|---|
-| pandas, 1 tiến trình | **85,5 s**, RSS đỉnh 9,4 GB | **không chạy được**: hết bộ nhớ sau 105 s (RSS 11,0 GB) |
-| Spark `local[4]`, đĩa cục bộ | 104,8 s (326.200 giá trị/s) | 168,1 s (368.500 giá trị/s) |
-| Cụm Spark 2 worker × 2 core, đọc/ghi HDFS | 153,7 s (222.400 giá trị/s) | 238,0 s (260.300 giá trị/s) |
-| Cụm / local | 1,47 lần | 1,42 lần |
+| Cấu hình | 56 trạm, 34,2 triệu giá trị | 103 trạm, 62,0 triệu giá trị | 235 trạm, 129,7 triệu giá trị |
+|---|---|---|---|
+| pandas, 1 tiến trình | **85,5 s**, RSS đỉnh 9,4 GB | **không chạy được**: hết bộ nhớ sau 105 s (RSS 11,0 GB) | **không chạy được**: chạm giới hạn sau 88 s (RSS 11,8 GB) |
+| Spark `local[4]`, đĩa cục bộ | 104,8 s (326.200 giá trị/s) | 168,1 s (368.500 giá trị/s) | 380,6 s (340.700 giá trị/s) |
+| Cụm Spark 2 worker × 2 core, đọc/ghi HDFS | 153,7 s (222.400 giá trị/s) | 238,0 s (260.300 giá trị/s) | 541,7 s (239.300 giá trị/s) |
+| Cụm / local | 1,47 lần | 1,42 lần | 1,42 lần |
 
 *Hình 5.v — `benchmarks/results/batch_large.png`.*
 
-Sau lần chốt 1, `hdfs fsck /wq`: HEALTHY, 1.537 tệp, 1.531 block, kích thước block trung bình 0,3 MB, không block
-nào thiếu bản sao.
+Sau lần chốt 3, `hdfs fsck /wq`: HEALTHY, 15.680 tệp, 15.674 block, kích thước block trung bình 0,1 MB, không block
+nào thiếu bản sao. Riêng dữ liệu thô là 4.206 tệp, 410,1 MB (820,2 MB trên đĩa với hệ số nhân bản 2).
 
 **Nhận xét.**
 1. **Đo được ranh giới của pandas trên dữ liệu thật.** Ở 34 triệu giá trị, pandas còn nhanh nhất nhưng đã dùng
    9,4 GB (RSS đỉnh 9.651 MiB), tức 60% RAM của máy. Ở 62 triệu giá trị, nó dừng vì hết bộ nhớ: đang giữ 11 GB thì
-   không cấp phát nổi thêm một mảng 473 MiB. Bộ nhớ của pandas tăng gần tuyến tính theo dữ liệu (khoảng 0,27 GB cho
-   mỗi triệu giá trị), nên với đủ 235 trạm (ước tính khoảng 140 triệu giá trị) pandas cần cỡ 40 GB.
-2. **Spark chạy được và mở rộng tốt hơn tuyến tính theo dữ liệu.** Dữ liệu tăng 1,81 lần nhưng thời gian Spark local
-   chỉ tăng 1,60 lần, cụm tăng 1,55 lần: chi phí cố định (khởi động job, lập lịch, liệt kê tệp) được chia cho nhiều
-   dữ liệu hơn, nên thông lượng tăng (326 → 368 nghìn giá trị/giây ở local). Spark đọc theo partition và tràn xuống
-   đĩa khi thiếu bộ nhớ, nên bộ nhớ driver 6 GB vẫn đủ ở khối dữ liệu mà pandas không chạy nổi.
-3. **Khoảng cách giữa cụm và local thu hẹp dần**: 1,89 lần ở 6 triệu giá trị (mục 5.4, cụm ghi đĩa cục bộ), 1,47 lần
-   ở 34 triệu và 1,42 lần ở 62 triệu giá trị, dù lượt chạy trên cụm còn gánh thêm chi phí HDFS. Trên một máy, cụm
-   chưa thể nhanh hơn local vì mọi container dùng chung 4 vCPU; lợi ích của cụm là thêm được máy thật khi dữ liệu
-   vượt khả năng một máy.
-4. Thông lượng trên dữ liệu thật thấp hơn dữ liệu nhân bản ở mục 5.4 (326 nghìn so với 485 nghìn giá trị/giây ở
-   `local[4]`): phải giải nén gzip và mở hàng nghìn tệp nhỏ thay vì 180 tệp. Tệp gzip không chia nhỏ được nên mỗi
-   tệp là một task; số tệp vẫn đủ để mọi core cùng bận.
-5. Block trung bình 0,3 MB, nhỏ hơn nhiều so với block 128 MB: vấn đề tệp nhỏ ở mục 5.7 càng rõ khi dữ liệu nhiều
-   trạm, vì mỗi trạm × thông số × năm là một tệp.
+   không cấp phát nổi thêm một mảng 473 MiB. Với đủ 235 trạm (130 triệu giá trị), nó chạm giới hạn sau 88 giây và
+   bị dừng với tín hiệu 11 (SIGSEGV) khi đang giữ 11,8 GB. Bộ nhớ của pandas tăng gần tuyến tính theo dữ liệu
+   (khoảng 0,28 GB cho mỗi triệu giá trị), nên khối 130 triệu giá trị cần khoảng 36 GB, hơn gấp đôi RAM của máy.
+2. **Spark chạy được ở mọi quy mô, thời gian tăng gần tuyến tính theo dữ liệu.** Dữ liệu tăng 3,79 lần (34 → 130
+   triệu giá trị), thời gian Spark tăng 3,63 lần ở local và 3,52 lần ở cụm. Từ lần chốt 1 sang 2, thông lượng tăng
+   (326 → 368 nghìn giá trị/giây ở local) vì chi phí cố định (khởi động job, lập lịch, liệt kê tệp) được chia cho
+   nhiều dữ liệu hơn. Từ lần chốt 2 sang 3, thông lượng giảm 7–8% (368 → 341 nghìn ở local, 260 → 239 nghìn ở cụm).
+   Giả thuyết, chưa kiểm chứng: số partition shuffle cố định là 16 nên mỗi partition lớn gấp đôi và phải tràn xuống
+   đĩa nhiều hơn; thí nghiệm tiếp theo là tăng số partition theo kích thước dữ liệu. Spark đọc theo partition và
+   tràn xuống đĩa khi thiếu bộ nhớ, nên driver 6 GB vẫn đủ cho khối dữ liệu mà pandas cần khoảng 36 GB.
+3. **Khoảng cách giữa cụm và local thu hẹp rồi ổn định quanh 1,4 lần**: 1,89 lần ở 6 triệu giá trị (mục 5.4, cụm
+   ghi đĩa cục bộ), 1,47 lần ở 34 triệu, 1,42 lần ở cả 62 và 130 triệu giá trị, dù lượt chạy trên cụm còn gánh thêm
+   chi phí HDFS (mục 5.7). Trên một máy, cụm chưa thể nhanh hơn local vì mọi container dùng chung 4 vCPU; lợi ích
+   của cụm là thêm được máy thật khi dữ liệu vượt khả năng một máy.
+4. Thông lượng trên dữ liệu thật thấp hơn dữ liệu nhân bản ở mục 5.4 (326–368 nghìn so với 485 nghìn giá trị/giây
+   ở `local[4]`): phải giải nén gzip và mở hàng nghìn tệp nhỏ (4.206 tệp ở lần chốt 3) thay vì 180 tệp. Tệp gzip
+   không chia nhỏ được nên mỗi tệp là một task; số tệp vẫn đủ để mọi core cùng bận.
+5. Block trung bình chỉ khoảng 0,1 MB so với block 128 MB: vấn đề tệp nhỏ ở mục 5.7 càng rõ khi dữ liệu nhiều
+   trạm, vì mỗi trạm × thông số × năm là một tệp và mỗi tệp chiếm một mục metadata trong bộ nhớ của NameNode.
 
 **Lỗi phát hiện khi nạp lại.** Lần chốt 2 làm lộ một lỗi của `--overwrite`: `copyFromLocalFile` vào một thư mục
 HDFS đã có sẽ chép nguồn thành thư mục con (`/wq/raw/usgs/usgs_large/…`) và giữ nguyên dữ liệu cũ, nên lượt chạy
 trên cụm sẽ âm thầm chỉ đọc 56 trạm cũ. Đã sửa (xóa bản cũ trước khi chép) và thêm test hồi quy
-`test_ingest_overwrite_replaces_instead_of_nesting`; sau khi nạp lại, HDFS có đúng 1.824 tệp như landing.
+`test_ingest_overwrite_replaces_instead_of_nesting`; sau khi nạp lại, HDFS có đúng 1.824 tệp như landing, và ở lần
+chốt 3 là đúng 4.206 tệp.
 
 ## 5.9 Streaming nhiều trạm thật, bật điền khuyết và dự báo
 

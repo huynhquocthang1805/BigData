@@ -62,6 +62,7 @@ do giới hạn tốc độ của API USGS (script tự tiếp tục từ chỗ 
 | Hạng mục | Kết quả |
 |---|---|
 | Batch ETL 23,8 triệu giá trị | 139 s (1 core) → 49 s (4 core), tăng tốc 2,84×; 47,7 triệu giá trị trong 112 s |
+| Dữ liệu thật 235 trạm USGS, 130 triệu giá trị trên HDFS | pandas hết bộ nhớ; Spark local 381 s, cụm Spark + HDFS 542 s |
 | Streaming Kafka → Spark → PostgreSQL | bền vững tới 8.000 msg/s, độ trễ p50 3,3 s / p95 4,0 s; trần ≈ 18.000 bản ghi/s |
 | Chịu lỗi | kill Spark giữa chừng + 1% dữ liệu trễ + 0,5% trùng ⇒ 0 mất, 0 trùng (2.866/2.866 bản ghi) |
 

@@ -95,16 +95,17 @@ nhóm** và thay số liệu; xu hướng mới là điều cần phân tích.
 
 ### Dữ liệu thật quy mô lớn (`bench_large.py` → `results/batch_large.csv`)
 
-Hai lần chốt bộ trạm lớn (danh sách 235 trạm, tải dần vì USGS giới hạn tần suất):
+Ba lần chốt bộ trạm lớn (danh sách 235 trạm, tải dần vì USGS giới hạn tần suất; lần chốt 3 có đủ 235 trạm):
 
-| Cấu hình | 56 trạm · 34,2 triệu giá trị | 103 trạm · 62,0 triệu giá trị |
-|---|---|---|
-| pandas, 1 tiến trình | **85,5 s**, RSS đỉnh 9,4 GB | **không chạy được**: hết bộ nhớ sau 105 s (giới hạn 12 GB) |
-| Spark local[4], đĩa cục bộ | 104,8 s | 168,1 s |
-| Spark cluster 4 core, đọc/ghi HDFS | 153,7 s | 238,0 s |
+| Cấu hình | 56 trạm · 34,2 triệu giá trị | 103 trạm · 62,0 triệu giá trị | 235 trạm · 129,7 triệu giá trị |
+|---|---|---|---|
+| pandas, 1 tiến trình | **85,5 s**, RSS đỉnh 9,4 GB | **không chạy được**: hết bộ nhớ sau 105 s (giới hạn 12 GB) | **không chạy được**: chạm giới hạn 12 GB sau 88 s |
+| Spark local[4], đĩa cục bộ | 104,8 s | 168,1 s | 380,6 s |
+| Spark cluster 4 core, đọc/ghi HDFS | 153,7 s | 238,0 s | 541,7 s |
 
-- pandas nhanh hơn khi còn vừa RAM nhưng hết bộ nhớ ở 62 triệu giá trị; Spark chạy cùng khối dữ liệu với driver 6 GB.
-- Dữ liệu tăng 1,81 lần, thời gian Spark chỉ tăng 1,55–1,60 lần; cluster/local thu hẹp 1,89 → 1,47 → 1,42 lần.
+- pandas nhanh hơn khi còn vừa RAM nhưng hết bộ nhớ từ 62 triệu giá trị; Spark chạy cả 130 triệu giá trị với driver 6 GB.
+- Dữ liệu tăng 3,79 lần (34 → 130 triệu), thời gian Spark tăng 3,52–3,63 lần; cluster/local thu hẹp 1,89 → 1,47 → 1,42 rồi giữ ở 1,42 lần.
+- Từ 62 lên 130 triệu giá trị, thông lượng giảm 7–8%; số partition shuffle (16) chưa được tinh chỉnh theo kích thước dữ liệu.
 - `--pandas-mem-gb 12` giới hạn bộ nhớ tiến trình pandas để nó dừng gọn thay vì để OOM killer làm sập dịch vụ khác.
 
 ![](results/batch_large.png)
