@@ -90,7 +90,8 @@ FastAPI cung cấp 12 endpoint (tài liệu OpenAPI tự sinh tại `/docs`): da
 thời gian thô/đã điền khuyết, tổng hợp theo giờ, dự báo mới nhất, chuỗi dự báo kèm giá trị thực, **độ chính xác
 trực tuyến** (MAE/RMSE theo mô hình × tầm dự báo, tính bằng cách nối dự báo với giá trị thực đến sau), dự báo theo
 yêu cầu, cảnh báo và số liệu vận hành. Dashboard Streamlit gồm 4 tab: Giám sát, Dự báo, Cảnh báo, Pipeline
-(Hình 4.x — `docs/images/dashboard_monitoring.png`, `dashboard_forecast.png`, `dashboard_pipeline.png`, `api_docs.png`, `spark_master_ui.png`).
+(Hình 4.x — `docs/images/dashboard_monitoring.png`, `dashboard_forecast.png`, `dashboard_pipeline.png`, `api_docs.png`, `spark_master_ui.png`; chế độ Big Data: `dashboard_bigdata.png`, bản đồ
+tô xanh các trạm đã có dữ liệu, thanh bên lọc chỉ các trạm đó).
 
 ## 4.v Lưu trữ phân tán với HDFS
 
@@ -136,7 +137,14 @@ nguồn chạy được ở hai chế độ:
 Hệ thống gồm 11 service trong một tệp Docker Compose (Hình 4.x — sơ đồ triển khai): Kafka (KRaft, không
 cần ZooKeeper), PostgreSQL, Spark master và 2 worker (mỗi worker 2 core, 2 GB), tiến trình streaming (Spark driver,
 client mode), producer, job khởi tạo dữ liệu, job tạo topic Kafka, API và dashboard; profile `hdfs` thêm NameNode và
-2 DataNode, profile `tools` thêm Kafka UI. Một image duy nhất (Python 3.12,
+2 DataNode, profile `tools` thêm Kafka UI.
+
+**Thứ tự khởi động HDFS.** Khi khởi động lại với dữ liệu cũ, NameNode ở chế độ an toàn (*safe mode*, chỉ đọc)
+cho tới khi các DataNode báo cáo đủ block. Vì vậy DataNode chỉ chờ NameNode *đã chạy*, còn các tiến trình ghi dữ
+liệu (job khởi tạo dữ liệu, tiến trình streaming) chờ NameNode *sẵn sàng*: đã ra khỏi safe mode và có ít nhất một
+DataNode sống (kiểm tra bằng healthcheck `hdfs dfsadmin`). Phiên bản đầu cho DataNode chờ NameNode sẵn sàng: lần
+chạy đầu không lộ lỗi vì HDFS còn trống, nhưng khi khởi động lại máy thì NameNode chờ DataNode còn DataNode chờ
+NameNode, cả cụm đứng yên. Sau khi sửa, cụm khởi động lại với dữ liệu cũ và sẵn sàng sau khoảng 50 giây. Một image duy nhất (Python 3.12,
 Spark 4.2.1, connector Kafka và JDBC tải sẵn lúc build) dùng cho mọi service Python/Spark, bảo đảm driver và
 executor có cùng môi trường — điều kiện bắt buộc khi dùng hàm Python trên executor. Ở chế độ demo, thư mục `data/` được
 chia sẻ giữa driver và executor để lưu checkpoint và data lake; ở chế độ Big Data, vai trò này do HDFS đảm nhận,

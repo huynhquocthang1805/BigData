@@ -44,7 +44,12 @@ var_info = {v["name"]: v for v in meta["variables"]}
 
 # ------------------------------------------------------------------ Sidebar
 st.sidebar.header("Bộ lọc")
-station_labels = {r.station_id: f"{r.station_id} – {r['name']}" for _, r in stations.iterrows()}
+# Chế độ Big Data nạp 235 trạm vào bảng stations nhưng chỉ một phần đã có dữ liệu: mặc định chỉ liệt kê các trạm đó
+has_data = stations["last_ts"].notna() if "last_ts" in stations else pd.Series(False, index=stations.index)
+only_active = st.sidebar.toggle("Chỉ hiện trạm đã có dữ liệu", value=bool(has_data.any()))
+listed = stations[has_data] if only_active and has_data.any() else stations
+st.sidebar.caption(f"{int(has_data.sum())}/{len(stations)} trạm đã có dữ liệu")
+station_labels = {r.station_id: f"{r.station_id} – {r['name']}" for _, r in listed.iterrows()}
 # Cho phép mở thẳng bằng link: ?station=USGS-07020850&param=turbidity&days=7
 qp = st.query_params
 ids = list(station_labels)
@@ -78,7 +83,9 @@ def main_view():
         left, right = st.columns([2, 1])
         with right:
             st.subheader("Trạm quan trắc")
-            st.map(stations.dropna(subset=["latitude", "longitude"]), latitude="latitude", longitude="longitude", size=20000)
+            pts = stations.dropna(subset=["latitude", "longitude"]).copy()
+            pts["color"] = pts["last_ts"].notna().map({True: "#0B6E78", False: "#9AA9AE"})  # xanh: có dữ liệu
+            st.map(pts, latitude="latitude", longitude="longitude", size=20000, color="color")
             row = stations[stations.station_id == station_id].iloc[0]
             st.dataframe(pd.DataFrame({"Thông số": [var_info[v]["label"] for v in var_info],
                                        "Giá trị mới nhất": [row.get(v) for v in var_info],

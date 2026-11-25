@@ -162,11 +162,14 @@ services:
       - "9870:9870"   # NameNode UI: datanode, block, dung lượng
     volumes:
       - hdfs-name:/hadoop/dfs/name
+    # Sẵn sàng = đã ra khỏi safe mode VÀ có ít nhất 1 DataNode sống. Khi khởi động lại với dữ liệu cũ, NameNode
+    # nằm trong safe mode tới khi DataNode báo cáo block => DataNode KHÔNG được chờ healthcheck này (sẽ chờ nhau mãi).
     healthcheck:
-      test: ["CMD-SHELL", "hdfs dfsadmin -safemode get | grep -q OFF"]
+      test: ["CMD-SHELL", "hdfs dfsadmin -safemode get | grep -q OFF && hdfs dfsadmin -report -live | grep -Eq 'Live datanodes \\([1-9]'"]
       interval: 10s
-      timeout: 20s
-      retries: 18
+      timeout: 30s
+      retries: 30
+      start_period: 30s
 
   datanode-1: &datanode
     image: apache/hadoop:3.5.0
@@ -180,7 +183,7 @@ services:
       - hdfs-data1:/hadoop/dfs/data
     depends_on:
       namenode:
-        condition: service_healthy
+        condition: service_started
 
   datanode-2:
     <<: *datanode
@@ -206,8 +209,8 @@ services:
       WQ_SKIP_DOWNLOAD: ${WQ_SKIP_DOWNLOAD:-0}
       WQ_DRIVER_MEMORY: 2g
     depends_on:
-      datanode-2:
-        condition: service_started
+      namenode:              # chỉ khi bật profile hdfs: chờ HDFS sẵn sàng nhận ghi
+        condition: service_healthy
         required: false
 
   # ---------------------------------------------------------------- Streaming (Spark driver, chạy job trên cluster)
@@ -239,8 +242,8 @@ services:
         condition: service_started
       spark-worker-2:
         condition: service_started
-      datanode-2:            # chỉ khi bật profile hdfs (checkpoint + data lake trên HDFS)
-        condition: service_started
+      namenode:              # chỉ khi bật profile hdfs (checkpoint + data lake trên HDFS)
+        condition: service_healthy
         required: false
     restart: on-failure
 
