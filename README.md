@@ -45,6 +45,16 @@ docker compose ps
 
 Lệnh hay dùng: `make help` (hoặc xem [`Makefile`](Makefile)). Chạy lại demo từ đầu: `./scripts/reset_stream.sh`.
 
+### Chế độ Big Data đầy đủ: 235 trạm + HDFS + Spark cluster
+
+```bash
+docker compose --env-file .env.bigdata up -d
+```
+
+Bật thêm HDFS (1 NameNode + 2 DataNode, http://localhost:9870), tải 235 trạm USGS về landing zone, nạp lên HDFS,
+chạy ETL trên cụm Spark, streaming đặt checkpoint trên HDFS. Cần Docker ≥ 6 CPU / 12 GB RAM; lần tải đầu mất lâu
+do giới hạn tốc độ của API USGS (script tự tiếp tục từ chỗ dừng). Chi tiết: [`docs/architecture.md`](docs/architecture.md).
+
 ![Dashboard giám sát](docs/images/dashboard_monitoring.png)
 
 ## Kết quả nổi bật (máy thử 4 vCPU — xem [`benchmarks/README.md`](benchmarks/README.md))
@@ -71,6 +81,8 @@ Lệnh hay dùng: `make help` (hoặc xem [`Makefile`](Makefile)). Chạy lại 
 | `api/`, `dashboard/` | FastAPI + Streamlit | TV1 (khung) + TV2 (trang giám sát) |
 | `docker-compose.yml`, `docker/`, `deploy/` | Triển khai | TV1 |
 | `benchmarks/` | Đo hiệu năng batch/streaming | TV1 |
+| `wq/models/validate.py` | Kiểm tra mô hình TV3/TV4 bàn giao trước khi tích hợp | TV1 |
+| `batch/ingest_hdfs.py`, `wq/io.py` | Nạp dữ liệu lên HDFS; đọc data lake (local hoặc HDFS) thành pandas | TV1 |
 | `tests/` | Unit test (pytest) | cả nhóm |
 
 ## Tài liệu
@@ -80,6 +92,7 @@ Lệnh hay dùng: `make help` (hoặc xem [`Makefile`](Makefile)). Chạy lại 
 - [`docs/01_danh_gia_tai_lieu.md`](docs/01_danh_gia_tai_lieu.md) — đánh giá 2 bài báo tham khảo + bài mẫu BKByte
 - [`docs/architecture.md`](docs/architecture.md) — kiến trúc & quyết định thiết kế
 - [`docs/data_contract.md`](docs/data_contract.md) — hợp đồng dữ liệu giữa các module
+- [`docs/kickoff_tv1.md`](docs/kickoff_tv1.md) — chương trình họp khởi động, các quyết định cần chốt
 - [`docs/report/`](docs/report/) — bản nháp các chương báo cáo TV1 phụ trách
 - [`benchmarks/README.md`](benchmarks/README.md) — phương pháp & kết quả đo hiệu năng
 

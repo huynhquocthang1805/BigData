@@ -25,15 +25,17 @@ station_id: str | ts: datetime64[ns, UTC] (lưới đều 15 phút) | 6 cột bi
 ```
 
 - Luôn **UTC**. Dùng `wq.timeseries.regularize(df)` để đưa về lưới đều (mốc thiếu ⇒ dòng NaN).
-- Đọc dữ liệu silver:
+- Đọc dữ liệu silver (data lake local hoặc HDFS đều dùng một hàm):
 
 ```python
-import pandas as pd
+from wq.io import read_silver
 from wq.timeseries import time_split
-df = pd.read_parquet("data/lake/silver/measurements")          # ~1,05 triệu dòng, 10 trạm
-df["station_id"] = df["station_id"].astype(str)
+df = read_silver(stations="core")              # 10 trạm chuẩn, ~1,05 triệu dòng
 train, valid, test = (time_split(df, k) for k in ("train", "valid", "test"))
 ```
+
+- Hai bộ trạm: `config/stations.json` (10 trạm chuẩn — mọi thí nghiệm ML báo cáo trên bộ này) và
+  `config/stations_large.json` (235 trạm — chế độ Big Data, chứa luôn 10 trạm chuẩn).
 
 ## 3. Chia dữ liệu theo thời gian (bắt buộc dùng chung)
 
@@ -82,7 +84,8 @@ class BaseForecaster:
 ```
 
 Bàn giao: lưu `models/imputer_<ten>.joblib`, `models/forecaster_<ten>.joblib`; class đặt trong
-`wq/models/` để nạp lại được; bật bằng biến môi trường `WQ_IMPUTER` / `WQ_FORECASTER` (xem `.env.example`).
+`wq/models/` để nạp lại được; **chạy `python -m wq.models.validate models/<file>.joblib` phải ĐẠT**;
+TV1 bật bằng biến môi trường `WQ_IMPUTER` / `WQ_FORECASTER` (xem `.env.example`).
 
 ## 7. Mặc định dự báo & cảnh báo
 

@@ -103,8 +103,9 @@ def fetch_legacy_site_year(site: str, params: list[str], a: datetime, b: datetim
     (API mới giới hạn số request/giờ). Thời gian trả về theo giờ địa phương -> đổi về UTC.
     """
     out: dict[str, list[dict]] = {p: [] for p in params}
-    # Chia theo quý: phản hồi nhỏ (~3-4 MB) => ít bị cắt kết nối giữa chừng hơn 1 request cả năm (~15 MB)
-    edges = [a] + [datetime(a.year, m, 1, tzinfo=timezone.utc) for m in (4, 7, 10) if a < datetime(a.year, m, 1, tzinfo=timezone.utc) < b] + [b]
+    # Chia theo tháng: phản hồi nhỏ (~1-3 MB, < 1 phút) => không bị cắt kết nối giữa chừng như request cả năm (~15 MB)
+    edges = [a] + [datetime(a.year, m, 1, tzinfo=timezone.utc) for m in range(2, 13)
+                   if a < datetime(a.year, m, 1, tzinfo=timezone.utc) < b] + [b]
     for qa, qb in zip(edges[:-1], edges[1:]):
         query = {"format": "json", "sites": site.replace("USGS-", ""), "parameterCd": ",".join(params),
                  "startDT": f"{qa:%Y-%m-%dT%H:%MZ}", "endDT": f"{qb - timedelta(minutes=1):%Y-%m-%dT%H:%MZ}",

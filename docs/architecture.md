@@ -9,39 +9,47 @@ huấn luyện và dữ liệu phục vụ nhất quán với nhau.
 
 ```mermaid
 flowchart TB
-    subgraph SRC[Nguồn dữ liệu]
-        USGS[(USGS Water Data OGC API<br/>collection continuous)]
+    USGS[(USGS Water Data API<br/>235 trạm, 15 phút)]
+    subgraph ING[Thu nhận]
+        DL[download_usgs.py] --> LAND[/landing zone<br/>CSV.gz trên đĩa/]
+        LAND -->|ingest_hdfs.py| RAW
     end
-    subgraph BATCH[Batch layer - PySpark]
-        DL[download_usgs.py] --> RAW[/raw CSV<br/>Hive partition/]
-        RAW --> BR[/bronze<br/>Parquet long/] --> SV[/silver<br/>Parquet wide 15'/] --> GD[/gold<br/>missingness/]
+    subgraph HDFS[HDFS: 1 NameNode + 2 DataNode, replication 2]
+        RAW[/raw/] --> BR[/bronze<br/>Parquet long/] --> SV[/silver<br/>Parquet wide 15'/] --> GD[/gold/]
+        LK[/stream Parquet/]
+        CK[/checkpoint<br/>offset + state/]
     end
-    subgraph SPEED[Speed layer]
-        PR[replay_producer.py<br/>idempotent producer] --> K{{Kafka KRaft<br/>wq.sensor.raw x6 partitions}}
-        K --> SSS[Spark Structured Streaming<br/>parse → QC → watermark 2h → dedup]
-        SSS -->|Q1 lake_sink<br/>Parquet append| LK[/lake/stream/]
-        SSS -->|Q2 serving_sink<br/>foreachBatch| SV2[upsert + alert<br/>+ ML online]
-        SSS -->|Q3 hourly_agg<br/>window 1h| HA[upsert hourly]
+    subgraph SPARK[Spark cluster: 1 master + 2 worker]
+        ETL[Batch ETL<br/>bronze → silver → gold]
+        SSS[Structured Streaming<br/>QC → watermark 2h → dedup<br/>3 query]
     end
-    subgraph MODEL[Mô hình]
-        IMP[Imputer - TV3]
-        FC[Forecaster - TV4]
+    subgraph SPEED[Luồng thời gian thực]
+        PR[replay_producer.py] --> K{{Kafka KRaft<br/>wq.sensor.raw x6}}
     end
-    subgraph SERVE[Serving]
-        PG[(PostgreSQL 16)]
-        API[FastAPI]
-        UI[Streamlit dashboard]
+    subgraph SERVE[Phục vụ]
+        PG[(PostgreSQL 16)] --> API[FastAPI] --> UI[Streamlit]
     end
+    MODEL[Imputer TV3 + Forecaster TV4<br/>.joblib]
     USGS --> DL
+    RAW -. đọc .-> ETL -. ghi .-> BR
     SV -->|split test| PR
-    SV -->|split train/valid| IMP & FC
-    IMP -. .joblib .-> SV2
-    FC -. .joblib .-> SV2
-    SV2 --> PG
-    HA --> PG
-    SSS -. StreamingQueryListener .-> PG
-    PG --> API --> UI
+    SV -->|split train/valid| MODEL
+    K --> SSS
+    SSS -->|lake_sink| LK
+    SSS -->|serving_sink + ML online<br/>hourly_agg| PG
+    SSS -.-> CK
+    MODEL -. nạp .-> SSS
 ```
+
+Hệ thống có **hai chế độ chạy cùng một mã nguồn**, chọn bằng biến môi trường:
+
+| | Chế độ phát triển (mặc định) | Chế độ Big Data đầy đủ (`--env-file .env.bigdata`) |
+|---|---|---|
+| Dữ liệu | 10 trạm chuẩn (5,96 triệu giá trị) | 235 trạm USGS có đủ 5 thông số (mục tiêu ~118 triệu giá trị) |
+| Lưu trữ data lake + checkpoint | Thư mục `./data` chia sẻ | **HDFS** (`hdfs://namenode:8020/wq/...`), replication 2 |
+| Batch ETL | Spark `local[2]` | Spark **cluster** (`spark://spark-master:7077`) |
+| Máy cần | ≥ 4 CPU, 8 GB RAM | ≥ 6 CPU, 12 GB RAM |
+| Dùng cho | TV2/TV3/TV4 phát triển, thí nghiệm ML | Demo Big Data, benchmark hiệu năng (TV1) |
 
 ## 2. Thành phần và lý do lựa chọn
 
@@ -51,6 +59,7 @@ flowchart TB
 | Message broker | Apache Kafka 4.3 (KRaft) | Log bền vững, đọc lại được (replay), phân vùng theo key → song song + giữ thứ tự theo trạm | MQTT (nhẹ nhưng không lưu log để replay) |
 | Xử lý batch | PySpark 4.2 | Chung engine với streaming, chạy được local lẫn cluster | pandas (nhanh ở dữ liệu nhỏ — xem benchmark) |
 | Xử lý stream | Spark Structured Streaming | Event-time, watermark, state, exactly-once với checkpoint, tái dùng code batch | Flink (mạnh hơn về độ trễ nhưng thêm 1 công nghệ) |
+| Lưu trữ phân tán | HDFS 3.5 (1 NameNode, 2 DataNode) | Chuẩn của hệ sinh thái Hadoop; block + nhân bản chịu lỗi; Spark đọc/ghi trực tiếp; nơi đặt checkpoint streaming | S3/MinIO (đổi `WQ_LAKE_PATH` sang `s3a://`) |
 | Data lake | Parquet (medallion bronze/silver/gold) | Nén cột, đọc chọn cột, phân vùng theo trạm | Delta Lake/Iceberg (hướng phát triển) |
 | Serving DB | PostgreSQL 16 | Truy vấn theo trạm + khoảng thời gian, upsert `ON CONFLICT` | TimescaleDB (hướng phát triển) |
 | API | FastAPI | Tự sinh tài liệu OpenAPI, nhẹ | Flask |

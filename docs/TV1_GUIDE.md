@@ -8,8 +8,22 @@ end-to-end; việc của bạn là nắm vững, chạy lại trên máy mình, 
 
 ## 0. Phần việc của TV1 và trạng thái hiện tại
 
-| # | Hạng mục | File chính | Trạng thái |
+Mã việc theo sơ đồ pipeline nhóm (TV1.1 … TV1.7):
+
+| Mã | Hạng mục | File chính | Trạng thái |
 |---|---|---|---|
+| TV1.1 | Kiến trúc + data contract + họp khởi động | `docs/architecture.md`, `wq/contracts.py`, `docs/kickoff_tv1.md` | ✅ tài liệu + chương trình họp — 🔧 họp chốt D1–D12 |
+| TV1.2 | Streaming + kiểm chứng tính đúng | `streaming/stream_processor.py`, `scripts/verify_stream.py` | ✅ 0 mất, 0 trùng sau khi kill Spark (cả checkpoint local lẫn HDFS) |
+| TV1.2 | Lưu trữ phân tán HDFS | `docker-compose.yml` (profile `hdfs`), `batch/ingest_hdfs.py`, `.env.bigdata` | ✅ NameNode + 2 DataNode, replication 2, data lake + checkpoint trên HDFS |
+| TV1.3 | Benchmark hiệu năng | `benchmarks/` | ✅ batch (quy mô × core, local/cluster, pandas), streaming (tốc độ phát), dữ liệu lớn thật — 🔧 chạy lại trên máy nhóm |
+| TV1.4 | Báo cáo Ch.1, Ch.2 (lý thuyết Big Data), Ch.4 | `docs/report/ch1…`, `ch2_ly_thuyet_bigdata_tv1.md`, `ch4…` | ✅ bản nháp |
+| TV1.5 | Tích hợp mô hình TV3/TV4 | `wq/models/registry.py`, `wq/models/validate.py` | ✅ công cụ kiểm tra + đã diễn tập nạp `.joblib` trên worker — 🔧 tuần 3 thay mô hình thật |
+| TV1.6 | Báo cáo Ch.5 (hiệu năng), Ch.6 | `docs/report/ch5…`, `ch6…` | ✅ có số liệu mẫu — 🔧 số liệu cuối |
+| TV1.7 | Slide, video demo, ghép báo cáo | slide bảo vệ, mục 6 hướng dẫn này | ✅ slide phần TV1 + khung cho TV2–4 — 🔧 ghép kết quả cuối |
+| — | Serving + dashboard | `api/main.py`, `dashboard/app.py` | ✅ 12 endpoint, 4 tab — 🔧 TV2 thêm trang giám sát |
+| — | Unit test | `tests/` | ✅ 23 test pass |
+
+---|---|---|---|
 | 1 | Kiến trúc tổng thể + sơ đồ | `docs/architecture.md` | ✅ có sơ đồ tổng thể, tuần tự, triển khai, ERD |
 | 2 | Data contract + interface mô hình | `wq/contracts.py`, `wq/models/base.py`, `docs/data_contract.md` | ✅ v1.0.0 — 🔧 họp nhóm chốt (tuần 1) |
 | 3 | Kafka replay producer | `ingestion/replay_producer.py` | ✅ speedup/rate, bơm dữ liệu trễ/trùng, idempotent |
@@ -78,6 +92,32 @@ Spark app (tab **Structured Streaming**) http://localhost:4040 · Kafka UI: `doc
 
 Các lệnh khác: `make help` (Linux/WSL/Git Bash). Chạy lại demo từ đầu: `./scripts/reset_stream.sh`
 rồi `docker compose up -d stream-processor producer`.
+
+## 2b. Chế độ Big Data đầy đủ (235 trạm + HDFS + Spark cluster)
+
+Đây là chế độ dùng để **demo và đo hiệu năng** cho môn Big Data. Cùng mã nguồn, chỉ khác cấu hình (`.env.bigdata`):
+
+```bash
+docker compose --env-file .env.bigdata up -d
+```
+
+Luồng chạy: tải 235 trạm về landing zone (`data/raw/usgs_large`, file `.csv.gz`) → `batch.ingest_hdfs` nạp lên
+`hdfs://namenode:8020/wq/raw/usgs` → ETL chạy trên cụm Spark ghi bronze/silver/gold vào HDFS → streaming đặt
+checkpoint và data lake trên HDFS. Kiểm tra:
+
+```bash
+docker compose --env-file .env.bigdata exec namenode hdfs dfsadmin -report
+```
+
+```bash
+docker compose --env-file .env.bigdata exec namenode hdfs fsck /wq/lake -files -blocks | tail -20
+```
+
+NameNode UI: http://localhost:9870 (Datanodes, Browse the file system). Reset luồng ở chế độ này:
+`./scripts/reset_stream.sh .env.bigdata`.
+
+Lưu ý tải dữ liệu: API mới của USGS giới hạn số request/giờ cho người dùng không có API key; downloader tự chờ và
+tiếp tục, có thể chạy song song nguồn IV cũ (`--source legacy`). Chạy lại lệnh là tải tiếp phần còn thiếu.
 
 ## 3. Hiểu hệ thống (để viết báo cáo và trả lời giảng viên)
 
@@ -178,7 +218,13 @@ echo "WQ_FORECASTER=/app/models/forecaster_xgb.joblib" >> .env
 docker compose up -d --force-recreate stream-processor api
 ```
 
-Kiểm tra: log `stream-processor` in `imputer=...joblib`; endpoint `/stations/{id}/forecast` trả `forecaster` mới;
+Trước khi bật, kiểm tra file bàn giao (phải ĐẠT — đặc biệt imputer phải `causal=True`):
+
+```bash
+docker compose run --rm --no-deps producer python -m wq.models.validate models/imputer_kalman.joblib
+```
+
+Kiểm tra sau khi bật: log `stream-processor` in `imputer=...joblib`; endpoint `/stations/{id}/forecast` trả `forecaster` mới;
 `/predictions/accuracy` có dòng của model mới. Nếu model cần thư viện mới (vd. `torch`), thêm vào
 `requirements.txt` (ghim version) rồi `docker compose build`.
 
@@ -260,6 +306,8 @@ docker compose exec kafka /opt/kafka/bin/kafka-get-offsets.sh --bootstrap-server
 | Mô hình được triển khai vào streaming thế nào? | Interface `BaseImputer/BaseForecaster`, file `.joblib`, cấu hình bằng biến môi trường; chạy phân tán `groupBy(station).applyInPandas`, nạp model 1 lần mỗi worker. |
 | Vì sao chỉ dùng imputer causal online? | Online không có dữ liệu tương lai; dùng phương pháp nhìn cả 2 phía sẽ gây rò rỉ thông tin (leakage) và không khả thi thời gian thực. |
 | Hệ thống chịu lỗi thế nào nếu worker chết? | Spark lập lịch lại task trên worker còn lại; driver chết ⇒ khởi động lại từ checkpoint (`restart: on-failure`); Kafka giữ dữ liệu 7 ngày. |
+| Vì sao cần HDFS khi đã có ổ đĩa chung? | Checkpoint và data lake phải nằm trên bộ nhớ mà mọi executor cùng truy cập và chịu được hỏng nút; HDFS chia file thành block, nhân bản trên nhiều DataNode, NameNode biết block nằm ở đâu để Spark đọc gần dữ liệu. Ổ đĩa chung chỉ đúng khi mọi thứ ở trên một máy. |
+| Ghi lên HDFS chậm hơn ổ local, sao vẫn dùng? | Mỗi block được ghi 2 lần (replication 2) qua mạng; đổi lại dữ liệu và checkpoint không mất khi 1 DataNode hỏng, và mở rộng dung lượng bằng cách thêm DataNode. Số đo cụ thể ở Ch.5. |
 | Làm sao mở rộng lên production? | Kafka nhiều broker (replication 3), Spark trên Kubernetes/YARN, lưu trữ S3/HDFS + Delta Lake, TimescaleDB, Prometheus/Grafana — trình bày ở Ch.6. |
 
 ## 9. Xử lý sự cố thường gặp

@@ -56,10 +56,11 @@ def run_pandas(raw: str, work: str, scale: int) -> dict:
     """Cùng logic ETL nhưng bằng pandas trên 1 tiến trình (baseline đơn máy)."""
     t0 = time.perf_counter()
     parts = []
-    for f in glob.glob(f"{raw}/station_id=*/parameter_code=*/*.csv"):
+    for f in glob.glob(f"{raw}/station_id=*/parameter_code=*/*.csv*"):   # .csv hoặc .csv.gz
         sid = f.split("station_id=")[1].split("/")[0]
         code = f.split("parameter_code=")[1].split("/")[0]
-        d = pd.read_csv(f, usecols=["time", "value"], dtype={"value": "float64"})
+        d = pd.read_csv(f, usecols=["time", "value"])
+        d["value"] = pd.to_numeric(d["value"], errors="coerce")
         d["station_id"], d["variable"] = sid, contracts.USGS_CODE_TO_NAME[code]
         parts.append(d)
     df = pd.concat(parts, ignore_index=True)
