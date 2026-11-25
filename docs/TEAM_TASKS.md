@@ -47,7 +47,7 @@ song được ngay, không phải chờ ai.
 | Interface mô hình | `wq/models/base.py`: `BaseImputer`, `BaseForecaster`, `PREDICTION_COLUMNS` | TV3, TV4 |
 | Baseline | `wq/models/baselines.py`: LOCF, nội suy tuyến tính, persistence, seasonal-naive | TV3, TV4 |
 | Kiểm tra mô hình trước khi bàn giao | `python -m wq.models.validate <file .joblib>` | TV3, TV4 |
-| Bộ dữ liệu lớn (danh sách 235 trạm, đã tải hơn 100 trạm) trên HDFS và cụm Spark | `docker compose --env-file .env.bigdata ...`, xem `docs/TV1_GUIDE.md` | TV2 |
+| Bộ dữ liệu lớn: đủ 235 trạm thật (4.206 tệp, 410 MB nén) trên HDFS và cụm Spark | `docker compose --env-file .env.bigdata ...`, xem `docs/TV1_GUIDE.md` | TV2 |
 | Streaming chạy mô hình online | biến `WQ_IMPUTER`, `WQ_FORECASTER` | TV1 tích hợp |
 | API (12 endpoint) và dashboard 4 tab | `api/main.py`, `dashboard/app.py` | TV2 thêm trang giám sát |
 
@@ -94,7 +94,7 @@ Kết quả cần đạt:
 **TV2.2c WQI và luật cảnh báo:**
 - [ ] `wq/wqi.py`: một chỉ số WQI có trích nguồn, tính từ các biến đang có. Có bản Spark ghi bảng gold `wqi_daily` (`station_id, date, wqi, wqi_class`); `tests/test_wqi_tv2.py` so với giá trị tính tay.
 - [ ] Sửa `ALERT_RULES` trong `wq/contracts.py`: mỗi ngưỡng có nguồn, ghi trong comment và trong Ch.3.
-- [ ] Giảm cảnh báo nhiễu. Luật hiện tại quá "ồn": trong lượt demo chế độ Big Data có 11.417 cảnh báo cho khoảng 26.666 bản ghi. SC_HIGH chiếm 6.028 cảnh báo ở 11 trạm ven biển (nước lợ vốn có độ dẫn điện cao), DO_LOW 3.475 ở 14 trạm, TEMP_HIGH 2.608 ở 7 trạm. Đề xuất ngưỡng theo loại trạm hoặc chỉ cảnh báo khi vi phạm kéo dài; phần giữ trạng thái trong streaming thì ghi đặc tả trong PR để TV1 làm.
+- [ ] Giảm cảnh báo nhiễu. Luật hiện tại quá "ồn": trong lượt demo chế độ Big Data có 11.417 cảnh báo cho khoảng 26.666 bản ghi. SC_HIGH chiếm 6.028 cảnh báo ở 11 trạm ven biển (nước lợ vốn có độ dẫn điện cao), DO_LOW 3.475 ở 14 trạm, TEMP_HIGH 2.608 ở 7 trạm. Đề xuất ngưỡng theo loại trạm (trường `site_type` trong `config/stations_large.json`: Stream, Tidal stream, Estuary, Lake…) hoặc chỉ cảnh báo khi vi phạm kéo dài; phần giữ trạng thái trong streaming thì ghi đặc tả trong PR để TV1 làm.
 - [ ] `docs/report/tables/tv2_alerts_before_after.csv`: số cảnh báo theo luật trên split test, trước và sau khi tinh chỉnh, tính bằng Spark với `wq.spark_transforms.alert_events`.
 
 **TV2.2d Trang giám sát** (`dashboard/app.py`):
