@@ -103,7 +103,13 @@ docker compose --env-file .env.bigdata up -d
 
 Luồng chạy: tải 235 trạm về landing zone (`data/raw/usgs_large`, file `.csv.gz`) → `batch.ingest_hdfs` nạp lên
 `hdfs://namenode:8020/wq/raw/usgs` → ETL chạy trên cụm Spark ghi bronze/silver/gold vào HDFS → streaming đặt
-checkpoint và data lake trên HDFS. Kiểm tra:
+checkpoint và data lake trên HDFS.
+
+Tải đủ 235 trạm mất khoảng 4 giờ khi chưa có API key (xem lưu ý cuối mục này). Muốn chạy ngay với phần đã tải:
+đặt `WQ_SKIP_DOWNLOAD=1` trong `.env.bigdata`; `data-init` sẽ bỏ bước tải, nạp phần đã có lên HDFS rồi chạy ETL
+(ETL tự bỏ qua nếu silver đã có trên HDFS).
+
+Kiểm tra:
 
 ```bash
 docker compose --env-file .env.bigdata exec namenode hdfs dfsadmin -report

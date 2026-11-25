@@ -195,12 +195,15 @@ services:
       - bash
       - -c
       - >-
-        python -m ingestion.download_usgs --quiet &&
+        if [ "$${WQ_SKIP_DOWNLOAD:-0}" = "1" ]; then echo "WQ_SKIP_DOWNLOAD=1: dùng dữ liệu đã có trong landing zone";
+        else python -m ingestion.download_usgs --quiet; fi &&
         python -m batch.ingest_hdfs &&
         python -m batch.etl_usgs --skip-if-exists --master "$${WQ_ETL_MASTER:-local[2]}"
     environment:
       <<: *wq-env
       WQ_ETL_MASTER: ${WQ_ETL_MASTER:-local[2]}
+      # 1 = bỏ bước tải (bộ 235 trạm tải mất ~4 giờ khi chưa có API key) và dùng phần đã tải sẵn
+      WQ_SKIP_DOWNLOAD: ${WQ_SKIP_DOWNLOAD:-0}
       WQ_DRIVER_MEMORY: 2g
     depends_on:
       datanode-2:
