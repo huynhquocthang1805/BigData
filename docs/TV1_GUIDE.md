@@ -119,6 +119,19 @@ NameNode UI: http://localhost:9870 (Datanodes, Browse the file system). Reset lu
 Lưu ý tải dữ liệu: API mới của USGS giới hạn số request/giờ cho người dùng không có API key; downloader tự chờ và
 tiếp tục, có thể chạy song song nguồn IV cũ (`--source legacy`). Chạy lại lệnh là tải tiếp phần còn thiếu.
 
+Số đo thực tế khi tải bộ lớn (không có API key): API mới trả HTTP 429 sau vài chục trạm và bắt chờ tới ~30 phút;
+nguồn IV cũ mất ~23 giây cho một request một tháng × 6 thông số. Gộp hai nguồn được ~1 trạm/phút, nên tải đủ 235 trạm
+mất khoảng 4 giờ. Bộ số liệu trong báo cáo (mục 5.8) được chốt ở **56 trạm**. Muốn nhanh hơn: đăng ký API key miễn phí
+của USGS Water Data rồi đặt `USGS_API_KEY` (gửi qua header `X-Api-Key`), hoặc để máy tải qua đêm:
+
+```bash
+python -m ingestion.download_usgs --stations-file config/stations_large.json --out data/raw/usgs_large --gzip --workers 4
+```
+
+```bash
+python -m ingestion.download_usgs --stations-file config/stations_large.json --out data/raw/usgs_large --gzip --source legacy --reverse --workers 10
+```
+
 ## 3. Hiểu hệ thống (để viết báo cáo và trả lời giảng viên)
 
 Đọc theo thứ tự: `docs/architecture.md` → `wq/contracts.py` → `ingestion/replay_producer.py` →

@@ -1,0 +1,4 @@
+engine,mode,storage,cores,stations,input_values,silver_rows,total_s,values_per_s,peak_rss_mb,host_cpus,note
+pandas,single-process,local,1,56,34180940,5892096,85.51,399729,9651,4,
+spark,local,local,4,56,34180940,5892096,104.8,326154,,4,
+spark,cluster,hdfs,4,56,34180940,5892096,153.71,222373,,4,

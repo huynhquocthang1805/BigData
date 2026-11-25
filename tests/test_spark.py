@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pyspark.sql import functions as F
 
 from batch.etl_usgs import to_bronze, to_silver
-from streaming.stream_processor import build_hourly, parse_messages
+from streaming.stream_processor import PRED_SCHEMA, build_hourly, make_forecast_fn, parse_messages
 from wq import contracts
 from wq.spark_transforms import alert_events, apply_range_qc
 
@@ -79,3 +79,17 @@ def test_bronze_scale_replicates_stations(spark):
                                 "station_id string, parameter_code string")
     ids = {r[0] for r in to_bronze(raw, scale=3).select("station_id").collect()}
     assert ids == {"USGS-1", "USGS-1-r1", "USGS-1-r2"}
+
+
+def test_forecast_udf_station_without_do(spark, sample_df):
+    """Trạm không có cảm biến DO => bộ dự báo không sinh dòng nào; applyInPandas vẫn phải chạy (không lỗi
+    ép kiểu double -> timestamp của Arrow) và chỉ trả dự báo cho trạm có DO."""
+    pdf = sample_df.copy()
+    pdf.loc[pdf["station_id"] == "S2", "dissolved_oxygen"] = float("nan")
+    sdf = spark.createDataFrame(pdf[contracts.MEASUREMENT_COLUMNS])
+    out = (sdf.groupBy("station_id")
+           .applyInPandas(make_forecast_fn("seasonal_naive"), schema=PRED_SCHEMA)
+           .toPandas())
+    assert len(out) > 0
+    assert set(out["station_id"]) == {"S1"}
+

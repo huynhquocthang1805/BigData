@@ -171,13 +171,26 @@ def make_impute_fn(spec: str, write_from: pd.Timestamp):
     return impute
 
 
+PRED_DTYPES = {"station_id": "object", "target": "object", "issued_at": "datetime64[ns, UTC]",
+               "horizon_min": "int32", "target_ts": "datetime64[ns, UTC]", "y_pred": "float64", "model": "object"}
+
+
+def empty_predictions() -> pd.DataFrame:
+    """Khung dự báo rỗng nhưng ĐÚNG KIỂU cột.
+
+    pd.DataFrame({c: []}) cho mọi cột kiểu float64; Arrow không ép được double -> timestamp (kể cả khi 0 dòng)
+    nên cả truy vấn streaming dừng. Gặp khi một trạm không có cảm biến DO => bộ dự báo không sinh dòng nào
+    (bộ 10 trạm chuẩn trạm nào cũng có DO nên lỗi chỉ lộ ra với bộ 56 trạm)."""
+    return pd.DataFrame({c: pd.Series(dtype=t) for c, t in PRED_DTYPES.items()})
+
+
 def make_forecast_fn(spec: str):
     def forecast(pdf: pd.DataFrame) -> pd.DataFrame:
         pdf = pdf.assign(ts=_utc(pdf["ts"]))
         model = _get_model("forecaster", spec)
         preds = model.predict(pdf[contracts.MEASUREMENT_COLUMNS])
         if preds.empty:
-            return pd.DataFrame({c: [] for c in PRED_COLUMNS})
+            return empty_predictions()
         preds["horizon_min"] = preds["horizon_min"].astype("int32")
         return preds[PRED_COLUMNS]
     return forecast

@@ -26,6 +26,25 @@ docker compose run --rm --no-deps data-init python -m benchmarks.bench_streaming
 docker compose run --rm --no-deps data-init python -m benchmarks.plot_results
 ```
 
+Dữ liệu thật quy mô lớn (chế độ Big Data, cần profile `hdfs`): tải bộ trạm lớn, nạp lên HDFS rồi chạy
+`bench_large` (pandas → Spark local[4] → cụm Spark 4 core đọc/ghi HDFS):
+
+```bash
+docker compose --env-file .env.bigdata up -d namenode datanode-1 datanode-2 spark-master spark-worker-1 spark-worker-2
+```
+
+```bash
+docker compose --env-file .env.bigdata run --rm --no-deps producer python -m batch.ingest_hdfs
+```
+
+```bash
+docker compose --env-file .env.bigdata run --rm --no-deps -e WQ_DRIVER_MEMORY=6g producer python -m benchmarks.bench_large
+```
+
+```bash
+docker compose --env-file .env.bigdata run --rm --no-deps producer python -m benchmarks.bench_streaming --master spark://spark-master:7077 --cores 4 --rates 1000 4000 --duration 45 --ml --out benchmarks/results/stream_large.csv
+```
+
 Kết quả được **nối thêm** (append) vào `benchmarks/results/batch_scaling.csv` và `stream_scaling.csv`
 (chạy lại nhiều lần ⇒ biểu đồ lấy trung vị). Ghi rõ cấu hình máy khi đưa vào báo cáo.
 
@@ -69,6 +88,40 @@ nhóm** và thay số liệu; xu hướng mới là điều cần phân tích.
 ![](results/batch_throughput_vs_size.png)
 ![](results/batch_speedup_vs_cores.png)
 ![](results/batch_local_vs_cluster.png)
+
+### Dữ liệu thật quy mô lớn: 56 trạm, 34,2 triệu giá trị (`bench_large.py` → `results/batch_large.csv`)
+
+Bộ trạm lớn chốt ở 56 trạm thật (15 bang và Puerto Rico), 970 tệp CSV gzip, 108,6 MB; 5.892.096 dòng silver.
+
+| Cấu hình | Dữ liệu thô / data lake | Thời gian (s) | Giá trị/s | Bộ nhớ |
+|---|---|---|---|---|
+| pandas, 1 tiến trình | đĩa cục bộ / đĩa cục bộ | **85,5** | 399.700 | RSS đỉnh **9,4 GB** (60% RAM máy) |
+| Spark local[4] | đĩa cục bộ / đĩa cục bộ | 104,8 | 326.200 | driver giới hạn 6 GB |
+| Spark cluster, 4 core | HDFS / HDFS | 153,7 | 222.400 | 2 worker × 2 GB |
+
+- pandas vẫn nhanh hơn khi còn vừa RAM, nhưng 9,4 GB cho 34 triệu giá trị; đủ 235 trạm (~143 triệu) ước tính ~40 GB.
+- Cluster + HDFS chậm hơn local 1,47× (bộ chuẩn: 1,89×): chi phí cố định của cụm được chia cho nhiều dữ liệu hơn.
+- Dữ liệu thật chậm hơn dữ liệu nhân bản (326 nghìn so với 485 nghìn giá trị/s ở local[4]) do giải nén gzip và 970 tệp nhỏ.
+
+### HDFS so với đĩa cục bộ (bộ chuẩn 5,96 triệu giá trị, Spark local[4])
+
+| Nơi ghi data lake | Thời gian (s) | Trên đĩa |
+|---|---|---|
+| Đĩa cục bộ | 18,6 | 52,7 MiB |
+| HDFS, replication 2 | 45,9 | 104,7 MiB (52,4 MiB × 2) |
+
+`hdfs fsck`: HEALTHY, block trung bình < 1 MB so với block 128 MB (nhiều tệp nhỏ).
+
+### Streaming 56 trạm thật, bật ML (`bench_streaming.py --ml` → `results/stream_large.csv`)
+
+| Tốc độ phát | Số trạm | Xử lý / đã phát | Throughput | p50 | p95 | Micro-batch | Xả backlog |
+|---|---|---|---|---|---|---|---|
+| 1.000 msg/s | 10 | — | 936 | 3,5 s | 5,0 s | 3,1 s | — |
+| 1.000 msg/s | 56 | 45.000 / 45.000 | 918 | 7,7 s | 11,6 s | 6,9 s | 4,0 s |
+| 4.000 msg/s | 56 | 180.000 / 180.000 | 3.448 | 15,8 s | 23,7 s | 13,6 s | 7,2 s |
+
+- Không mất bản ghi; chi phí ML tăng theo số trạm (một nhóm pandas mỗi trạm mỗi micro-batch).
+- Lần chạy đầu lộ lỗi kiểu dữ liệu khi một trạm không có DO; đã sửa và có test hồi quy.
 
 ### Streaming Kafka → Spark (cluster 4 core, trigger 2 s) → PostgreSQL
 

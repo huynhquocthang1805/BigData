@@ -106,3 +106,99 @@ bằng `scripts/verify_stream.py`.
    được nhận nếu đến trước khi watermark của micro-batch kế tiếp vượt qua nó. Muốn loại chặt chẽ cần thêm bộ lọc theo
    thời gian xử lý — đánh đổi giữa tính đầy đủ và độ kịp thời.
 4. Sink Parquet tạo 199 file cho 2.866 dòng (*small files problem*): cần job gộp file định kỳ hoặc dùng Delta Lake.
+
+**Lặp lại trên HDFS.** Thí nghiệm được chạy lại ở chế độ Big Data, với checkpoint Spark và data lake đặt trên HDFS
+(`WQ_CHECKPOINT_PATH`, `WQ_LAKE_PATH` trỏ tới `hdfs://namenode:8020/wq/…`), cùng kịch bản dừng đột ngột và khởi động
+lại: kết quả giống hệt bảng 5.z (2.866/2.866 bản ghi, 0 thiếu, 0 trùng, 0 bản ghi trễ bị loại). Như vậy cơ chế khôi
+phục không phụ thuộc thư mục chia sẻ cục bộ, điều kiện để chạy driver trên máy khác của cụm.
+
+## 5.7 Lưu trữ HDFS so với ổ đĩa cục bộ
+
+**Thiết lập.** Cùng job ETL raw → bronze → silver → gold trên bộ dữ liệu chuẩn (10 trạm, 5.956.594 giá trị thô,
+1.052.160 dòng silver), Spark `local[4]`, chỉ đổi nơi ghi data lake.
+
+**Bảng 5.w — Thời gian ETL theo nơi lưu data lake**
+
+| Nơi ghi data lake | Thời gian (s) | Dung lượng logic | Dung lượng thực trên đĩa |
+|---|---|---|---|
+| Ổ đĩa cục bộ | 18,6 | 52,7 MiB | 52,7 MiB |
+| HDFS, hệ số nhân bản 2 (NameNode + 2 DataNode) | 45,9 | 52,4 MiB | 104,7 MiB |
+
+`hdfs fsck /wq/lake_core`: HEALTHY, 76 tệp, 73 block, hệ số nhân bản trung bình 2,0, không block nào thiếu bản sao.
+
+**Nhận xét.**
+1. Ghi lên HDFS chậm hơn 2,5 lần. Mỗi tệp phải xin NameNode cấp block rồi đẩy dữ liệu qua chuỗi 2 DataNode
+   (*write pipeline*), tức ghi gấp đôi số byte và thêm nhiều lượt RPC; trên một máy, mọi DataNode dùng chung một ổ
+   đĩa nên không có lợi ích đọc ghi song song.
+2. Kích thước block trung bình chỉ 0,75 MB so với block 128 MB: data lake gồm nhiều tệp nhỏ, đúng loại tải HDFS xử
+   lý kém nhất vì chi phí metadata tính theo tệp. Gộp tệp (`coalesce` trước khi ghi, hoặc compaction định kỳ) là
+   cải tiến cần làm khi dữ liệu lớn hơn.
+3. Cái giá 2,5 lần đổi lấy ba điều ổ đĩa cục bộ không có: một không gian tên chung cho mọi executor trên mọi máy,
+   dữ liệu còn nguyên khi mất một DataNode, và checkpoint streaming khôi phục được từ máy khác (mục 5.6).
+
+## 5.8 Dữ liệu thật quy mô lớn trên HDFS
+
+**Thiết lập.** Bộ trạm lớn được chốt ở **56 trạm thật** thuộc 15 bang và Puerto Rico (52 trạm đủ 3 năm × 6 thông số; danh sách đầy đủ 235 trạm
+chưa tải xong do USGS giới hạn tần suất), gồm 970 tệp CSV nén gzip, 108,6 MB, tương ứng **34.180.940 giá trị thô**
+và 5.892.096 dòng silver trên lưới 15 phút. Nạp lên HDFS mất 57 giây (970 tệp, 207 MiB trên đĩa tính cả bản sao).
+Cùng job ETL như mục 5.4, cùng máy 4 vCPU, 15,7 GB RAM; script `benchmarks/bench_large.py`, kết quả trong
+`benchmarks/results/batch_large.csv`.
+
+**Bảng 5.v — ETL trên 34,2 triệu giá trị thật của 56 trạm**
+
+| Cấu hình | Dữ liệu thô đọc từ | Data lake ghi vào | Thời gian (s) | Thông lượng (giá trị/s) | Bộ nhớ |
+|---|---|---|---|---|---|
+| pandas, 1 tiến trình | ổ đĩa cục bộ | ổ đĩa cục bộ | **85,5** | 399.700 | đỉnh đo được **9,4 GB** |
+| Spark `local[4]` | ổ đĩa cục bộ | ổ đĩa cục bộ | 104,8 | 326.200 | giới hạn driver 6 GB |
+| Cụm Spark, 2 worker × 2 core | HDFS | HDFS | 153,7 | 222.400 | giới hạn 2 GB mỗi worker |
+
+Sau khi chạy, HDFS chứa: dữ liệu thô 103,6 MiB, bronze 225,3 MiB, silver 66,1 MiB, gold 5,6 KiB (mỗi phần
+chiếm gấp đôi trên đĩa do nhân bản). `hdfs fsck /wq`: HEALTHY, 1.537 tệp, 1.531 block, kích thước block trung bình
+0,3 MB, không block nào thiếu bản sao.
+
+**Nhận xét.**
+1. pandas vẫn nhanh nhất nhưng đã dùng 9,4 GB (RSS đỉnh 9.651 MiB), tức 60% RAM của máy, cho 34 triệu giá trị. Bộ nhớ của pandas tăng
+   gần tuyến tính theo dữ liệu (5,9 GB ở 23,8 triệu giá trị, mục 5.4), nên với đủ 235 trạm (ước tính khoảng
+   143 triệu giá trị) pandas cần cỡ 40 GB và không chạy được trên máy này. Spark xử lý cùng job trong giới hạn
+   6 GB vì đọc theo partition và tràn xuống đĩa khi thiếu bộ nhớ; đây là lý do dùng Spark cho tầng batch.
+2. Cụm Spark đọc và ghi HDFS chậm hơn Spark local 1,47 lần, trong khi ở bộ chuẩn 6 triệu giá trị cụm chậm hơn
+   local 1,89 lần (mục 5.4), dù lượt chạy trên cụm còn gánh thêm chi phí HDFS. Chi phí cố định của cụm (khởi động
+   executor, lập lịch task, trao đổi dữ liệu qua mạng) được chia cho lượng dữ liệu lớn hơn, nên khoảng cách thu hẹp
+   khi dữ liệu tăng.
+3. Thông lượng trên dữ liệu thật thấp hơn dữ liệu nhân bản ở mục 5.4 (326 nghìn so với 485 nghìn giá trị/giây ở
+   `local[4]`): phải giải nén gzip và mở 970 tệp nhỏ thay vì 180 tệp. Tệp gzip không chia nhỏ được nên mỗi tệp là
+   một task; 970 tệp vẫn đủ để mọi core cùng bận. Benchmark trên dữ liệu thật cho thấy những chi phí mà dữ liệu
+   nhân bản bỏ sót.
+4. Block trung bình 0,3 MB, nhỏ hơn nhiều so với block 128 MB: vấn đề tệp nhỏ ở mục 5.7 càng rõ khi dữ liệu nhiều
+   trạm, vì mỗi trạm × thông số × năm là một tệp.
+
+## 5.9 Streaming với 56 trạm thật, bật điền khuyết và dự báo
+
+**Thiết lập.** Như mục 5.5 (cụm Spark 4 core, trigger 2 s, Kafka 6 partition), nhưng producer phát lại dữ liệu silver
+của 56 trạm đọc từ HDFS, và bật điền khuyết cùng dự báo trực tuyến (LOCF và seasonal-naive). Mỗi mức tốc độ phát
+trong 45 giây; kết quả trong `benchmarks/results/stream_large.csv`.
+
+**Bảng 5.u — Streaming có ML theo số trạm**
+
+| Tốc độ phát | Số trạm | Bản ghi xử lý / đã phát | Throughput (bản ghi/s) | p50 | p95 | Micro-batch (trung vị) | Xả backlog |
+|---|---|---|---|---|---|---|---|
+| 1.000 msg/s | 10 | — | 936 | 3,5 s | 5,0 s | 3,1 s | — |
+| 1.000 msg/s | 56 | 45.000 / 45.000 | 918 | 7,7 s | 11,6 s | 6,9 s | 4,0 s |
+| 4.000 msg/s | 56 | 180.000 / 180.000 | 3.448 | 15,8 s | 23,7 s | 13,6 s | 7,2 s |
+
+(Dòng 10 trạm lấy từ bảng 5.y.)
+
+**Nhận xét.**
+1. Không mất bản ghi nào ở cả hai mức. Tốc độ xử lý của Spark (trung vị 1.289 và 4.424 bản ghi/s) cao hơn tốc độ
+   phát, nên hệ thống vẫn theo kịp: phần dồn được xả trong 4–7 giây sau khi producer dừng.
+2. Độ trễ tăng khoảng gấp đôi so với 10 trạm (p50 3,5 → 7,7 s ở 1.000 msg/s). Bước ML chạy một nhóm pandas cho mỗi
+   trạm trong mỗi micro-batch (`groupBy(station_id).applyInPandas`), nên chi phí tăng theo số trạm chứ không chỉ theo
+   số bản ghi. Micro-batch dài hơn chu kỳ trigger, Spark tự gom nhiều dữ liệu hơn vào mỗi lô; ở 4.000 msg/s tốc độ xử
+   lý chỉ cao hơn tốc độ phát 11%, tức hệ thống đã gần ngưỡng khi bật ML trên máy 4 vCPU.
+3. **Dữ liệu thật phát hiện một lỗi mà dữ liệu chuẩn không lộ ra.** Lần chạy đầu, truy vấn dừng ngay micro-batch đầu
+   tiên: một trạm trong bộ 56 không có cảm biến DO, bộ dự báo trả khung rỗng, pandas 2.3 gán kiểu float64 cho mọi cột
+   của khung rỗng, và Arrow không ép được float64 sang timestamp (kể cả khi 0 dòng). Đã sửa bằng khung rỗng đúng kiểu
+   (`empty_predictions()` trong `streaming/stream_processor.py`) và thêm test hồi quy
+   `test_forecast_udf_station_without_do`. Bộ 10 trạm chuẩn trạm nào cũng có DO nên lỗi chưa từng xuất hiện.
+4. Muốn giảm độ trễ khi số trạm tăng: tăng số core cho bước ML, gom nhiều trạm vào một nhóm pandas, hoặc chạy dự báo
+   theo chu kỳ riêng (ví dụ mỗi 15 phút dữ liệu) thay vì mỗi micro-batch.

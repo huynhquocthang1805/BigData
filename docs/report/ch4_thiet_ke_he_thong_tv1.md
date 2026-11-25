@@ -7,12 +7,16 @@
 
 Hệ thống được tổ chức theo kiến trúc Lambda [6] rút gọn gồm năm lớp (Hình 4.1):
 
-- **Lớp thu thập:** script tải dữ liệu từ USGS Water Data OGC API (collection *continuous*) theo trạm × thông số × năm,
-  có retry và chia nhỏ khoảng thời gian khi chạm giới hạn trang; lưu CSV theo bố cục phân vùng kiểu Hive.
+- **Lớp thu thập:** script tải dữ liệu USGS theo trạm × thông số × năm từ hai nguồn: Water Data OGC API (collection
+  *continuous*) và dịch vụ Instantaneous Values cũ (một yêu cầu trả cả 6 thông số, chia theo tháng); có retry,
+  tôn trọng `Retry-After` khi bị giới hạn tần suất, tải tiếp được khi bị ngắt; lưu CSV (nén gzip) theo bố cục
+  phân vùng kiểu Hive, sau đó nạp lên HDFS.
 - **Lớp xử lý batch:** Spark chuyển dữ liệu qua các tầng bronze → silver → gold của data lake Parquet.
 - **Lớp xử lý luồng (speed layer):** Kafka nhận dữ liệu cảm biến; Spark Structured Streaming [4] làm sạch, khử trùng lặp,
   tổng hợp theo cửa sổ thời gian, điền khuyết và dự báo trực tuyến.
-- **Lớp lưu trữ:** data lake Parquet (lưu trữ phân tích, dữ liệu huấn luyện) và PostgreSQL (phục vụ truy vấn).
+- **Lớp lưu trữ:** data lake Parquet trên HDFS (NameNode + 2 DataNode, hệ số nhân bản 2) cho dữ liệu thô, các tầng
+  bronze/silver/gold/stream và checkpoint của Spark; PostgreSQL cho truy vấn phục vụ. Ở chế độ demo, data lake nằm
+  trên ổ đĩa cục bộ với cùng bố cục thư mục.
 - **Lớp phục vụ:** FastAPI cung cấp REST API; Streamlit hiển thị giám sát, dự báo, cảnh báo và số liệu vận hành.
 
 Hai lớp batch và streaming dùng chung một *data contract* (tên cột, đơn vị, phạm vi hợp lệ, quy ước bitmask,
@@ -21,8 +25,8 @@ cách chia dữ liệu) và chung mã kiểm tra chất lượng, nhờ đó d�
 
 *Hình 4.1 — Kiến trúc tổng thể (docs/architecture.md, mục 1).*
 
-**Bảng 4.1 — Công nghệ sử dụng:** Kafka 4.3 (KRaft), Spark 4.2.1 (PySpark, Python 3.12, Java 21), PostgreSQL 16,
-FastAPI, Streamlit + Plotly, Docker Compose. Lý do lựa chọn và phương án thay thế: xem `docs/architecture.md` mục 2.
+**Bảng 4.1 — Công nghệ sử dụng:** Kafka 4.3 (KRaft), Spark 4.2.1 (PySpark, Python 3.12, Java 21), Hadoop HDFS 3.5,
+PostgreSQL 16, FastAPI, Streamlit + Plotly, Docker Compose. Lý do lựa chọn và phương án thay thế: xem `docs/architecture.md` mục 2.
 
 ## 4.x Thu nhận dữ liệu thời gian thực với Kafka
 
@@ -88,11 +92,52 @@ trực tuyến** (MAE/RMSE theo mô hình × tầm dự báo, tính bằng cách
 yêu cầu, cảnh báo và số liệu vận hành. Dashboard Streamlit gồm 4 tab: Giám sát, Dự báo, Cảnh báo, Pipeline
 (Hình 4.x — `docs/images/dashboard_monitoring.png`, `dashboard_forecast.png`, `dashboard_pipeline.png`, `api_docs.png`, `spark_master_ui.png`).
 
+## 4.v Lưu trữ phân tán với HDFS
+
+**Vai trò.** HDFS [10] là tầng lưu trữ chung của cụm: mọi executor Spark, dù chạy trên worker nào, đọc và ghi cùng
+một không gian tên `hdfs://namenode:8020`, nên không cần thư mục chia sẻ giữa các máy. NameNode giữ metadata
+(cây thư mục, danh sách block của từng tệp, vị trí các bản sao); hai DataNode giữ dữ liệu thật theo block 128 MB.
+Với hệ số nhân bản 2, mỗi block có bản sao trên cả hai DataNode, nên hệ thống chịu được việc mất một DataNode
+mà không mất dữ liệu. NameNode phát hiện DataNode chết qua heartbeat; khi đó các block chỉ còn một bản sao
+(*under-replicated*) và được sao chép lại ngay khi có DataNode thay thế. Trên cụm thật thường dùng hệ số 3 với
+ít nhất 3 DataNode.
+
+**Bố cục dữ liệu.**
+
+| Đường dẫn HDFS | Nội dung | Ghi bởi |
+|---|---|---|
+| `/wq/raw/usgs/station_id=…/parameter_code=…/<năm>.csv.gz` | dữ liệu thô đã tải | `batch/ingest_hdfs.py` |
+| `/wq/lake/bronze`, `/silver`, `/gold` | Parquet các tầng medallion | `batch/etl_usgs.py` (Spark) |
+| `/wq/lake/stream/measurements` | Parquet do luồng ghi thêm | stream-processor |
+| `/wq/checkpoints/<truy vấn>` | offset Kafka, trạng thái watermark/khử trùng lặp | Spark Structured Streaming |
+
+**Nạp dữ liệu.** Script tải dữ liệu ghi vào vùng đệm cục bộ (*landing zone*); `batch/ingest_hdfs.py` sao chép
+lên HDFS bằng API `FileSystem.copyFromLocalFile` của Hadoop qua Spark, sau đó in tổng số tệp, dung lượng logic,
+dung lượng thực trên đĩa (tính cả bản sao) và số block. Tệp đang tải dở được đặt tên bắt đầu bằng dấu chấm nên
+Spark bỏ qua, tránh đọc tệp chưa hoàn chỉnh.
+
+**Checkpoint trên HDFS.** Đặt checkpoint của Spark Structured Streaming trên HDFS là điều kiện để khôi phục khi
+tiến trình driver chết trên một máy bất kỳ: tiến trình mới (có thể trên máy khác) đọc lại offset và trạng thái từ
+HDFS rồi xử lý tiếp. Kiểm chứng ở mục 5.6: dừng đột ngột tiến trình xử lý giữa chừng, bật lại, không mất và không
+trùng bản ghi nào.
+
+**Hai chế độ chạy.** Đường dẫn data lake, checkpoint và dữ liệu thô đều đọc từ biến môi trường, nên cùng một mã
+nguồn chạy được ở hai chế độ:
+
+| | Chế độ demo (mặc định) | Chế độ Big Data (`--env-file .env.bigdata`) |
+|---|---|---|
+| Trạm | 10 trạm chuẩn | 235 trạm ở 36 bang (gồm 10 trạm chuẩn) |
+| Lưu trữ | ổ đĩa cục bộ `/app/data` | HDFS `hdfs://namenode:8020/wq/…` |
+| ETL batch | Spark `local[2]` | cụm Spark `spark://spark-master:7077` |
+| Service | 11 | 14 (thêm NameNode, 2 DataNode) |
+
 ## 4.u Triển khai
 
-Toàn bộ hệ thống gồm 12 service trong một tệp Docker Compose (Hình 4.x — sơ đồ triển khai): Kafka (KRaft, không
+Hệ thống gồm 11 service trong một tệp Docker Compose (Hình 4.x — sơ đồ triển khai): Kafka (KRaft, không
 cần ZooKeeper), PostgreSQL, Spark master và 2 worker (mỗi worker 2 core, 2 GB), tiến trình streaming (Spark driver,
-client mode), producer, job khởi tạo dữ liệu, API, dashboard và Kafka UI (tùy chọn). Một image duy nhất (Python 3.12,
+client mode), producer, job khởi tạo dữ liệu, job tạo topic Kafka, API và dashboard; profile `hdfs` thêm NameNode và
+2 DataNode, profile `tools` thêm Kafka UI. Một image duy nhất (Python 3.12,
 Spark 4.2.1, connector Kafka và JDBC tải sẵn lúc build) dùng cho mọi service Python/Spark, bảo đảm driver và
-executor có cùng môi trường — điều kiện bắt buộc khi dùng hàm Python trên executor. Thư mục `data/` được chia sẻ
-giữa driver và executor để lưu checkpoint và data lake; khi lên cụm thật chỉ cần thay bằng HDFS/S3.
+executor có cùng môi trường — điều kiện bắt buộc khi dùng hàm Python trên executor. Ở chế độ demo, thư mục `data/` được
+chia sẻ giữa driver và executor để lưu checkpoint và data lake; ở chế độ Big Data, vai trò này do HDFS đảm nhận,
+và khi lên cụm nhiều máy chỉ cần đổi địa chỉ Spark master và NameNode.
