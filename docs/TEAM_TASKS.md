@@ -253,7 +253,8 @@ git push -u origin tv3/3.1-giao-thuc-che
 ### 6.4 Những trường hợp bot không merge mà chuyển TV1 quyết
 
 - CI hoặc test lỗi; xóa, skip hoặc nới lỏng test cũ để test qua.
-- Sửa file ngoài phạm vi sở hữu mà không giải thích trong PR; sửa `streaming/`, `docker-compose.yml`, `docker/`, `.github/`.
+- Sửa file ngoài phạm vi sở hữu mà không giải thích trong PR; sửa `streaming/`, `docker-compose.yml`, `docker/`, `.github/`,
+  hoặc sửa chính file này (bot cập nhật file này; muốn đổi tiêu chí thì ghi trong PR để TV1 quyết).
 - Đổi data contract (`wq/contracts.py`, `docs/data_contract.md`), trừ phần `ALERT_RULES` của TV2.
 - Commit dữ liệu (`data/`), file `.joblib`, file lớn hơn 5 MB, notebook kèm output nặng, hoặc bí mật (`.env`, token, mật khẩu).
 - Rò rỉ dữ liệu: fit trên valid hoặc test; chấm điền khuyết trên ô không bị che; mô hình causal dùng dữ liệu tương lai.
