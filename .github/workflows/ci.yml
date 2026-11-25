@@ -1,0 +1,44 @@
+# Chạy unit test cho mọi PR và mỗi lần nhánh chính thay đổi.
+# Kiểm tra mô hình trên dữ liệu thật (wq.models.validate) cần data lake nên không chạy ở đây;
+# bot review chạy bước đó trên máy có dữ liệu (xem docs/TEAM_TASKS.md, mục 6.3).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [thang/TV1]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # Spark 4.x cần Java 17/21; image Docker của dự án dùng Temurin 21
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Cài thư viện
+        run: pip install -r requirements.txt
+
+      - name: Chạy test
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          WQ_SPARK_JARS_BUNDLED: "1"
+        run: python -m pytest -q -p no:cacheprovider

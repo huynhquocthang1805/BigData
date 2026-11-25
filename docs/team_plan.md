@@ -37,7 +37,8 @@ flowchart LR
 
 ## 4. Quy trình làm việc
 
-- Mỗi người làm trên nhánh riêng (`tv2/etl-qc`, `tv3/imputation`…), mở Pull Request vào nhánh chính; **TV1 review**.
+- Mỗi người làm trên nhánh riêng (`tv2/2.2a-qc`, `tv3/3.1-giao-thuc-che`…), mở Pull Request vào `thang/TV1`; bot review thay
+  TV1 và merge khi đạt tiêu chí. Việc, tiêu chí đạt và trạng thái: [`TEAM_TASKS.md`](TEAM_TASKS.md).
 - Trước khi mở PR: `make test` phải pass; không commit dữ liệu (`data/` đã trong `.gitignore`).
 - Model bàn giao kèm: file `.joblib`, notebook tái lập, bảng số liệu (CSV) và 3–5 dòng mô tả trong `models/README.md`.
 - Họp ngắn 2 lần/tuần (15 phút): mỗi người nói đã xong gì, vướng gì, cần ai.

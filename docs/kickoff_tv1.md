@@ -27,7 +27,7 @@ Thời lượng: 45 phút · Chủ trì: TV1 · Thành phần: TV1, TV2, TV3, TV
 | D8 | Interface mô hình | `BaseImputer.transform()`, `BaseForecaster.predict()`, bàn giao `.joblib`; imputer online phải `causal=True` | ☐ |
 | D9 | Kiểm tra mô hình trước bàn giao | `python -m wq.models.validate <file>` phải ĐẠT | ☐ |
 | D10 | Hạn bàn giao quan trọng | Imputer (TV3.3) và forecaster (TV4.3): thứ 4 tuần 3 | ☐ |
-| D11 | Quy trình Git | Nhánh riêng mỗi người, PR vào nhánh chính, TV1 duyệt, `make test` phải pass | ☐ |
+| D11 | Quy trình Git | Nhánh riêng mỗi người, PR vào `thang/TV1`, bot review thay TV1 theo `docs/TEAM_TASKS.md`, CI và `make test` phải pass | ☐ |
 | D12 | Họp định kỳ | 2 lần/tuần, 15 phút | ☐ |
 
 ## 3. Checklist trên máy mỗi thành viên

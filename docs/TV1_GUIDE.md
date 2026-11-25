@@ -247,6 +247,21 @@ Kiểm tra sau khi bật: log `stream-processor` in `imputer=...joblib`; endpoin
 `/predictions/accuracy` có dòng của model mới. Nếu model cần thư viện mới (vd. `torch`), thêm vào
 `requirements.txt` (ghim version) rồi `docker compose build`.
 
+## 5b. Review PR của TV2–TV4
+
+Việc, tiêu chí đạt và trạng thái của từng thành viên nằm trong [`TEAM_TASKS.md`](TEAM_TASKS.md). PR của nhóm vào
+`thang/TV1` được kiểm tra hai lớp:
+
+- **CI** (`.github/workflows/ci.yml`) chạy `pytest` trên GitHub mỗi lần có push vào PR.
+- **Bot review** (Claude Code trong phiên làm việc của TV1) xem các PR đang mở lúc 7:40, 10:40, 13:40, 16:40, 19:40,
+  22:40 giờ Việt Nam: chạy lại test trong Docker, tạo lại và kiểm tra mô hình trên dữ liệu thật, đối chiếu tiêu chí của
+  mã việc. Đạt thì merge (merge commit, giữ commit của thành viên) và cập nhật `TEAM_TASKS.md`; chưa đạt thì để review
+  liệt kê việc cần sửa. Các trường hợp ở mục 6.4 của `TEAM_TASKS.md` (đổi contract, sửa streaming/Docker/CI, tài khoản
+  ngoài nhóm…) không tự merge mà chờ TV1 quyết.
+
+TV1 vẫn có thể tự review và merge trên GitHub bất cứ lúc nào. Muốn đổi lịch hoặc dừng bot, nói trong phiên Claude Code
+hoặc xóa scheduled task "Review PR nhóm BigData".
+
 ## 6. Kịch bản demo khi bảo vệ (~5 phút)
 
 1. `docker compose ps` — 9 container đang chạy (Kafka, PostgreSQL, Spark master + 2 worker, streaming, producer, API, dashboard) + 2 job khởi tạo đã hoàn tất (kafka-init, data-init).

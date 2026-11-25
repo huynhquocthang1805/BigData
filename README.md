@@ -87,6 +87,7 @@ do giới hạn tốc độ của API USGS (script tự tiếp tục từ chỗ 
 
 ## Tài liệu
 
+- [`docs/TEAM_TASKS.md`](docs/TEAM_TASKS.md) — **việc, tiêu chí đạt và trạng thái của TV2, TV3, TV4**; quy trình PR và review tự động
 - [`docs/TV1_GUIDE.md`](docs/TV1_GUIDE.md) — **hướng dẫn từng bước cho TV1** (chạy, hiểu, làm tiếp, demo, Q&A bảo vệ)
 - [`docs/team_plan.md`](docs/team_plan.md) — phân công chi tiết, sản phẩm bàn giao, lịch 4 tuần
 - [`docs/01_danh_gia_tai_lieu.md`](docs/01_danh_gia_tai_lieu.md) — đánh giá 2 bài báo tham khảo + bài mẫu BKByte
