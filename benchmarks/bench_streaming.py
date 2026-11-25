@@ -31,7 +31,7 @@ from wq.config import get_settings
 BENCH_DB = "wq_bench"
 FIELDS = ["mode", "cores", "ml", "target_rate", "messages", "producer_rate", "duration_s", "processed_rows",
           "throughput_rows_s", "spark_processed_rps_median", "latency_p50_ms", "latency_p95_ms",
-          "latency_max_ms", "batches", "batch_ms_median", "drain_s", "host_cpus"]
+          "latency_max_ms", "batches", "batch_ms_median", "drain_s", "host_cpus", "stations"]
 
 
 def ensure_bench_db(s) -> None:
@@ -83,7 +83,8 @@ def run_one(s, args, rate: int, cores: int, run_id: str) -> dict:
     t0 = time.time()
     prod = subprocess.run([sys.executable, "-m", "ingestion.replay_producer", "--topic", topic,
                            "--start", "2023-01-01", "--end", "2026-01-01", "--rate", str(rate),
-                           "--limit", str(n_msgs), "--replicate", str(args.replicate)],
+                           "--limit", str(n_msgs), "--replicate", str(args.replicate)]
+                          + (["--max-stations", str(args.max_stations)] if args.max_stations else []),
                           env=env, capture_output=True, text=True)
     t_prod = time.time() - t0
     m = re.search(r"Hoàn tất: ([\d,]+) message trong ([\d.]+)s", prod.stdout)
@@ -108,6 +109,7 @@ def run_one(s, args, rate: int, cores: int, run_id: str) -> dict:
                         "FROM batch_latency ORDER BY id").fetchall()
         prog = c.execute("SELECT processed_rows_per_sec FROM stream_progress WHERE query_name = 'serving_sink' "
                          "AND num_input_rows > 0 ORDER BY id").fetchall()
+        n_stations = c.execute("SELECT count(DISTINCT station_id) FROM measurements").fetchone()[0]
     sp.send_signal(signal.SIGTERM)
     try:
         sp.wait(60)
@@ -129,7 +131,7 @@ def run_one(s, args, rate: int, cores: int, run_id: str) -> dict:
         "latency_p95_ms": round(statistics.median([r[1] for r in steady])) if steady else None,
         "latency_max_ms": round(max(r[2] for r in lat)) if lat else None,
         "batches": len(lat), "batch_ms_median": round(statistics.median([r[3] for r in lat])) if lat else None,
-        "drain_s": drain_s, "host_cpus": os.cpu_count(), "span_s": span,
+        "drain_s": drain_s, "host_cpus": os.cpu_count(), "span_s": span, "stations": n_stations,
     }
 
 
@@ -146,6 +148,7 @@ def main() -> None:
     ap.add_argument("--warmup", type=int, default=10)
     ap.add_argument("--max-drain", type=int, default=300)
     ap.add_argument("--ml", action="store_true", help="bật điền khuyết + dự báo online trong lúc đo")
+    ap.add_argument("--max-stations", type=int, help="chỉ phát N trạm (so sánh theo số trạm trên cùng dữ liệu)")
     ap.add_argument("--work", default="data/bench")
     ap.add_argument("--out", default="benchmarks/results/stream_scaling.csv")
     args = ap.parse_args()
@@ -153,9 +156,11 @@ def main() -> None:
     ensure_bench_db(s)
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     new_file = not Path(args.out).exists()
+    # file cũ giữ nguyên header của nó (vd. chưa có cột stations) để các dòng mới vẫn khớp cột
+    fields = FIELDS if new_file else Path(args.out).open().readline().strip().split(",")
     run_id = time.strftime("%H%M%S")
     with open(args.out, "a", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
+        w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
         if new_file:
             w.writeheader()
         for cores in args.cores:

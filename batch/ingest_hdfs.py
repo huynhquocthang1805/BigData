@@ -37,6 +37,27 @@ def hdfs_summary(spark, path: str) -> dict:
             "replication": sorted(repl), "block_size_mb": int(fs.getDefaultBlockSize(p)) // (1024 * 1024)}
 
 
+def ingest(spark, src: str, dst: str, overwrite: bool = False) -> bool:
+    """Chép cây thư mục landing (local) sang dst (HDFS, hoặc file:// khi test). Trả về True nếu đã chép."""
+    sc = spark.sparkContext
+    jvm, conf = sc._jvm, sc._jsc.hadoopConfiguration()
+    dst_p = jvm.org.apache.hadoop.fs.Path(dst)
+    fs = dst_p.getFileSystem(conf)
+    if fs.exists(dst_p):
+        if not overwrite:
+            print(f"{dst} đã tồn tại -> bỏ qua (thêm --overwrite để nạp lại)")
+            return False
+        # copyFromLocalFile vào một thư mục ĐÃ CÓ sẽ chép nguồn thành thư mục con dst/<tên nguồn> và giữ bản cũ
+        # (Spark đọc theo glob station_id=* sẽ chỉ thấy dữ liệu cũ) => xóa bản cũ để --overwrite đúng nghĩa nạp lại
+        fs.delete(dst_p, True)
+    t0 = time.perf_counter()
+    fs.mkdirs(dst_p.getParent())
+    # copyFromLocalFile(delSrc, overwrite, src, dst): chép cả cây thư mục, giữ nguyên phân vùng station_id=/parameter_code=
+    fs.copyFromLocalFile(False, True, jvm.org.apache.hadoop.fs.Path("file://" + src), dst_p)
+    print(f"Đã nạp lên {dst} trong {time.perf_counter() - t0:.1f}s")
+    return True
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     cfg = get_settings()
@@ -50,18 +71,7 @@ def main() -> None:
     args.src = str(Path(args.src).resolve())
 
     spark = build_spark("wq-ingest-hdfs", master="local[2]")
-    sc = spark.sparkContext
-    jvm, conf = sc._jvm, sc._jsc.hadoopConfiguration()
-    dst = jvm.org.apache.hadoop.fs.Path(args.dst)
-    fs = dst.getFileSystem(conf)
-    if fs.exists(dst) and not args.overwrite:
-        print(f"{args.dst} đã tồn tại -> bỏ qua (thêm --overwrite để nạp lại)")
-    else:
-        t0 = time.perf_counter()
-        fs.mkdirs(dst.getParent())
-        # copyFromLocalFile(delSrc, overwrite, src, dst): chép cả cây thư mục, giữ nguyên phân vùng station_id=/parameter_code=
-        fs.copyFromLocalFile(False, True, jvm.org.apache.hadoop.fs.Path("file://" + args.src), dst)
-        print(f"Đã nạp lên HDFS trong {time.perf_counter() - t0:.1f}s")
+    ingest(spark, args.src, args.dst, args.overwrite)
     print(json.dumps(hdfs_summary(spark, args.dst), indent=2))
     spark.stop()
 

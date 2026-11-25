@@ -17,9 +17,12 @@
 - Thực nghiệm hiệu năng định lượng (máy 4 vCPU): ETL tăng tốc 2,84× khi tăng từ 1 lên 4 core (23,8 triệu giá trị),
   xử lý 47,7 triệu giá trị trong 112 s; streaming bền vững tới 8.000 message/giây với độ trễ p95 4 s, thông lượng
   tối đa ≈ 18.000 bản ghi/giây.
-- Chạy được trên dữ liệu thật quy mô lớn: 56 trạm, 34,2 triệu giá trị thô, lưu trên HDFS và xử lý trên cụm Spark
-  trong 154 s. pandas cần 9,4 GB RAM cho cùng khối lượng (60% RAM máy), trong khi Spark chạy trong giới hạn 6 GB;
-  khoảng cách giữa cụm và local thu hẹp từ 1,89× (6 triệu giá trị) xuống 1,47× (34 triệu giá trị).
+- Chạy được trên dữ liệu thật quy mô lớn: 103 trạm USGS, 62 triệu giá trị thô, lưu trên HDFS và xử lý trên cụm
+  Spark trong 238 s (Spark local 168 s). Ở khối dữ liệu này pandas hết bộ nhớ và không chạy xong (đã dùng 11 GB),
+  trong khi Spark chạy trong giới hạn driver 6 GB; ở 34 triệu giá trị pandas còn nhanh hơn nhưng đã dùng 9,4 GB.
+  Khoảng cách giữa cụm và local thu hẹp dần: 1,89 lần (6 triệu giá trị), 1,47 lần (34 triệu), 1,42 lần (62 triệu).
+- Streaming có điền khuyết và dự báo không mất bản ghi nào với 10, 50 và 100 trạm; số trạm tăng 10 lần thì độ trễ
+  p50 tăng 43% (5,5 → 7,9 s ở 1.000 msg/s).
 - [TV3] Phương pháp điền khuyết tốt nhất: [...], giảm RMSE [...]% so với LOCF ở tỉ lệ thiếu 20% liên tục.
 - [TV4] Mô hình dự báo tốt nhất: [...]; dự báo trên dữ liệu đã điền khuyết tốt hơn dữ liệu còn thiếu [...]%.
 
@@ -28,8 +31,8 @@
 1. Cụm Spark, HDFS và Kafka chạy trên **một máy vật lý** (các container chia sẻ CPU và ổ đĩa), nên kết quả mở rộng
    theo chiều ngang chỉ mang tính chỉ dẫn: cụm chậm hơn local, ghi HDFS chậm hơn ổ đĩa cục bộ 2,5 lần; ở quy mô dữ
    liệu chuẩn, pandas đơn tiến trình còn nhanh hơn Spark (đã nêu trung thực ở chương 5).
-2. Bộ dữ liệu lớn mới tải được 56 trên 235 trạm do API của USGS giới hạn tần suất với người dùng không có API key;
-   downloader tải tiếp được, cần chạy thêm khoảng 4 giờ hoặc dùng API key.
+2. Lúc đo, bộ dữ liệu lớn mới có 103 trên 235 trạm do API của USGS giới hạn tần suất với người dùng không có API key;
+   downloader tải tiếp được, cần chạy thêm vài giờ hoặc dùng API key.
 3. Dữ liệu thời gian thực được **mô phỏng bằng phát lại** dữ liệu lịch sử, chưa kết nối nguồn cảm biến trực tiếp.
 4. Kafka một broker (replication factor 1) — chưa chịu được lỗi broker; PostgreSQL một nút; HDFS một NameNode
    (chưa bật High Availability).

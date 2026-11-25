@@ -38,12 +38,16 @@ docker compose --env-file .env.bigdata run --rm --no-deps producer python -m bat
 ```
 
 ```bash
-docker compose --env-file .env.bigdata run --rm --no-deps -e WQ_DRIVER_MEMORY=6g producer python -m benchmarks.bench_large
+docker compose --env-file .env.bigdata run --rm --no-deps -e WQ_DRIVER_MEMORY=6g producer python -m benchmarks.bench_large --pandas-mem-gb 12
 ```
 
 ```bash
-docker compose --env-file .env.bigdata run --rm --no-deps producer python -m benchmarks.bench_streaming --master spark://spark-master:7077 --cores 4 --rates 1000 4000 --duration 45 --ml --out benchmarks/results/stream_large.csv
+docker compose --env-file .env.bigdata run --rm --no-deps producer python -m benchmarks.bench_streaming --master spark://spark-master:7077 --cores 4 --rates 1000 --duration 45 --ml --max-stations 10 --out benchmarks/results/stream_stations.csv
 ```
+
+Lặp lại lệnh trên với `--max-stations 50` và `--max-stations 100` (cùng phiên, không chạy gì khác song song).
+Khi tải thêm trạm: tạm dừng bộ tải để dữ liệu không đổi, nạp lại HDFS bằng `python -m batch.ingest_hdfs --overwrite`
+rồi chạy lại `bench_large`; mỗi lần chốt là một nhóm dòng mới (cột `stations`) trong `batch_large.csv`.
 
 Kết quả được **nối thêm** (append) vào `benchmarks/results/batch_scaling.csv` và `stream_scaling.csv`
 (chạy lại nhiều lần ⇒ biểu đồ lấy trung vị). Ghi rõ cấu hình máy khi đưa vào báo cáo.
@@ -89,19 +93,19 @@ nhóm** và thay số liệu; xu hướng mới là điều cần phân tích.
 ![](results/batch_speedup_vs_cores.png)
 ![](results/batch_local_vs_cluster.png)
 
-### Dữ liệu thật quy mô lớn: 56 trạm, 34,2 triệu giá trị (`bench_large.py` → `results/batch_large.csv`)
+### Dữ liệu thật quy mô lớn (`bench_large.py` → `results/batch_large.csv`)
 
-Bộ trạm lớn chốt ở 56 trạm thật (15 bang và Puerto Rico), 970 tệp CSV gzip, 108,6 MB; 5.892.096 dòng silver.
+Hai lần chốt bộ trạm lớn (danh sách 235 trạm, tải dần vì USGS giới hạn tần suất):
 
-| Cấu hình | Dữ liệu thô / data lake | Thời gian (s) | Giá trị/s | Bộ nhớ |
-|---|---|---|---|---|
-| pandas, 1 tiến trình | đĩa cục bộ / đĩa cục bộ | **85,5** | 399.700 | RSS đỉnh **9,4 GB** (60% RAM máy) |
-| Spark local[4] | đĩa cục bộ / đĩa cục bộ | 104,8 | 326.200 | driver giới hạn 6 GB |
-| Spark cluster, 4 core | HDFS / HDFS | 153,7 | 222.400 | 2 worker × 2 GB |
+| Cấu hình | 56 trạm · 34,2 triệu giá trị | 103 trạm · 62,0 triệu giá trị |
+|---|---|---|
+| pandas, 1 tiến trình | **85,5 s**, RSS đỉnh 9,4 GB | **không chạy được**: hết bộ nhớ sau 105 s (giới hạn 12 GB) |
+| Spark local[4], đĩa cục bộ | 104,8 s | 168,1 s |
+| Spark cluster 4 core, đọc/ghi HDFS | 153,7 s | 238,0 s |
 
-- pandas vẫn nhanh hơn khi còn vừa RAM, nhưng 9,4 GB cho 34 triệu giá trị; đủ 235 trạm (~143 triệu) ước tính ~40 GB.
-- Cluster + HDFS chậm hơn local 1,47× (bộ chuẩn: 1,89×): chi phí cố định của cụm được chia cho nhiều dữ liệu hơn.
-- Dữ liệu thật chậm hơn dữ liệu nhân bản (326 nghìn so với 485 nghìn giá trị/s ở local[4]) do giải nén gzip và 970 tệp nhỏ.
+- pandas nhanh hơn khi còn vừa RAM nhưng hết bộ nhớ ở 62 triệu giá trị; Spark chạy cùng khối dữ liệu với driver 6 GB.
+- Dữ liệu tăng 1,81 lần, thời gian Spark chỉ tăng 1,55–1,60 lần; cluster/local thu hẹp 1,89 → 1,47 → 1,42 lần.
+- `--pandas-mem-gb 12` giới hạn bộ nhớ tiến trình pandas để nó dừng gọn thay vì để OOM killer làm sập dịch vụ khác.
 
 ![](results/batch_large.png)
 
@@ -114,18 +118,22 @@ Bộ trạm lớn chốt ở 56 trạm thật (15 bang và Puerto Rico), 970 t�
 
 `hdfs fsck`: HEALTHY, block trung bình < 1 MB so với block 128 MB (nhiều tệp nhỏ).
 
-### Streaming 56 trạm thật, bật ML (`bench_streaming.py --ml` → `results/stream_large.csv`)
+### Streaming theo số trạm, bật ML (`bench_streaming.py --ml --max-stations N` → `results/stream_stations.csv`)
 
-| Tốc độ phát | Số trạm | Xử lý / đã phát | Throughput | p50 | p95 | Micro-batch | Xả backlog |
-|---|---|---|---|---|---|---|---|
-| 1.000 msg/s | 10 | — | 936 | 3,5 s | 5,0 s | 3,1 s | — |
-| 1.000 msg/s | 56 | 45.000 / 45.000 | 918 | 7,7 s | 11,6 s | 6,9 s | 4,0 s |
-| 4.000 msg/s | 56 | 180.000 / 180.000 | 3.448 | 15,8 s | 23,7 s | 13,6 s | 7,2 s |
+Cùng phiên đo, cùng cấu hình, 1.000 msg/s trong 45 giây, chỉ đổi số trạm:
 
-- Không mất bản ghi; chi phí ML tăng theo số trạm (một nhóm pandas mỗi trạm mỗi micro-batch).
-- Lần chạy đầu lộ lỗi kiểu dữ liệu khi một trạm không có DO; đã sửa và có test hồi quy.
+| Số trạm | Xử lý / đã phát | Throughput | p50 | p95 | Micro-batch | Xả backlog |
+|---|---|---|---|---|---|---|
+| 10 | 45.000 / 45.000 | 938 | 5,5 s | 7,9 s | 5,1 s | 3,0 s |
+| 50 | 45.000 / 45.000 | 918 | 6,3 s | 8,5 s | 5,6 s | 4,0 s |
+| 100 | 45.000 / 45.000 | 898 | 7,9 s | 11,9 s | 7,8 s | 5,1 s |
 
-![](results/stream_large_latency.png)
+- Số trạm tăng 10 lần, p50 tăng 43%: chi phí cố định mỗi micro-batch chiếm phần lớn.
+- Micro-batch đầu mất 18–21 s (khởi động Python worker, nạp mô hình) ở mọi lượt; lượt 45 s chịu ảnh hưởng lớn của nó.
+- Lượt đo đầu (`results/stream_large.csv`, 51 trạm): 4.000 msg/s vẫn không mất bản ghi (180.000/180.000), p50 15,8 s.
+- Lần chạy đầu với bộ lớn lộ lỗi kiểu dữ liệu khi một trạm không có DO; đã sửa và có test hồi quy.
+
+![](results/stream_latency_by_stations.png)
 
 ### Streaming Kafka → Spark (cluster 4 core, trigger 2 s) → PostgreSQL
 

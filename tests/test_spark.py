@@ -93,3 +93,28 @@ def test_forecast_udf_station_without_do(spark, sample_df):
     assert len(out) > 0
     assert set(out["station_id"]) == {"S1"}
 
+
+
+def test_ingest_overwrite_replaces_instead_of_nesting(spark, tmp_path):
+    """--overwrite phải THAY bản cũ: copyFromLocalFile vào thư mục đã có sẽ chép nguồn thành thư mục con
+    (dst/landing/...) và giữ dữ liệu cũ; Spark đọc theo glob station_id=* khi đó chỉ thấy dữ liệu cũ."""
+    import os
+
+    from batch.ingest_hdfs import ingest
+
+    def put(root, sid):
+        d = root / f"station_id={sid}" / "parameter_code=00300"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "2024.csv").write_text("time,value\n")
+
+    def tree(root):
+        return sorted(os.path.relpath(os.path.join(dp, f), root) for dp, _, fs in os.walk(root)
+                      for f in fs if not f.endswith(".crc"))
+
+    landing, raw = tmp_path / "landing", tmp_path / "raw"
+    put(landing, "A")
+    assert ingest(spark, str(landing), f"file://{raw}") is True
+    put(landing, "B")
+    assert ingest(spark, str(landing), f"file://{raw}") is False          # không --overwrite => bỏ qua
+    assert ingest(spark, str(landing), f"file://{raw}", overwrite=True) is True
+    assert tree(raw) == tree(landing)                                     # không có raw/landing/... lồng nhau

@@ -1,3 +1,3 @@
-mode,cores,ml,target_rate,messages,producer_rate,duration_s,processed_rows,throughput_rows_s,spark_processed_rps_median,latency_p50_ms,latency_p95_ms,latency_max_ms,batches,batch_ms_median,drain_s,host_cpus
-cluster,4,True,1000,45000,1000,45.0,45000,918,1289,7677,11566,26822,5,6945,4.0,4
-cluster,4,True,4000,180000,4000,45.0,180000,3448,4424,15832,23735,32315,4,13595,7.2,4
+mode,cores,ml,target_rate,messages,producer_rate,duration_s,processed_rows,throughput_rows_s,spark_processed_rps_median,latency_p50_ms,latency_p95_ms,latency_max_ms,batches,batch_ms_median,drain_s,host_cpus,stations
+cluster,4,True,1000,45000,1000,45.0,45000,918,1289,7677,11566,26822,5,6945,4.0,4,51
+cluster,4,True,4000,180000,4000,45.0,180000,3448,4424,15832,23735,32315,4,13595,7.2,4,51

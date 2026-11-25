@@ -127,7 +127,7 @@ tiếp tục, có thể chạy song song nguồn IV cũ (`--source legacy`). Ch�
 
 Số đo thực tế khi tải bộ lớn (không có API key): API mới trả HTTP 429 sau vài chục trạm và bắt chờ tới ~30 phút;
 nguồn IV cũ mất ~23 giây cho một request một tháng × 6 thông số. Gộp hai nguồn được ~1 trạm/phút, nên tải đủ 235 trạm
-mất khoảng 4 giờ. Bộ số liệu trong báo cáo (mục 5.8) được chốt ở **56 trạm**. Muốn nhanh hơn: đăng ký API key miễn phí
+mất khoảng 4 giờ. Benchmark trong báo cáo (mục 5.8) chạy trên hai lần chốt: **56 trạm** và **103 trạm**. Muốn nhanh hơn: đăng ký API key miễn phí
 của USGS Water Data rồi đặt `USGS_API_KEY` (gửi qua header `X-Api-Key`), hoặc để máy tải qua đêm:
 
 ```bash
@@ -319,8 +319,8 @@ docker compose exec kafka /opt/kafka/bin/kafka-get-offsets.sh --bootstrap-server
 | Vì sao cần Kafka, sao không cho Spark đọc thẳng API USGS? | Kafka tách nguồn và bộ xử lý: lưu log bền vững nên đọc lại được khi Spark lỗi, nhiều consumer đọc độc lập (lake/serving/hourly), hấp thụ đột biến tải; API USGS là pull theo lô, không phải luồng. |
 | Exactly-once đạt được thế nào? | Offset + state lưu trong checkpoint; batch lỗi sẽ chạy lại (at-least-once), nhưng mọi sink đều idempotent (upsert theo khóa chính, file sink có metadata log) ⇒ kết quả như exactly-once. Producer bật `enable.idempotence`. |
 | Watermark 2 giờ chọn thế nào? Đánh đổi gì? | Đủ lớn để nhận dữ liệu trễ thường gặp (producer bơm trễ ≤ 3s thực ≈ 3h dữ liệu ở tốc độ 3600×, phần lớn < 2h); lớn hơn ⇒ state lớn và kết quả cửa sổ ra muộn hơn; nhỏ hơn ⇒ mất nhiều dữ liệu trễ. Có thể chứng minh bằng số dòng bị loại. |
-| Dữ liệu này có phải "Big Data" không? | Ở mức đề tài: ~6 triệu giá trị thật/3 năm/10 trạm; kiến trúc mở rộng ngang (partition, executor, applyInPandas theo trạm); benchmark scale ×1→×4 (và hơn) cho thấy cách hệ thống mở rộng; dữ liệu cảm biến liên tục là bài toán velocity. Đồng thời trung thực: ở quy mô nhỏ pandas nhanh hơn (có số liệu). |
-| Vì sao pandas nhanh hơn Spark ở dữ liệu nhỏ? | Spark tốn chi phí khởi động JVM, lập kế hoạch, shuffle, tuần tự hóa; lợi ích xuất hiện khi dữ liệu vượt RAM một máy hoặc khi tăng số core/máy. Kết quả benchmark của nhóm cho thấy điều này. |
+| Dữ liệu này có phải "Big Data" không? | Bộ chuẩn ~6 triệu giá trị/10 trạm dùng cho thí nghiệm ML; bộ lớn đo được 62 triệu giá trị thật của 103 trạm (danh sách 235 trạm, ước tính ~140 triệu giá trị) lưu trên HDFS. Ở 62 triệu giá trị, pandas hết bộ nhớ trên máy 15,7 GB còn Spark chạy xong trong 168 s (local) và 238 s (cụm + HDFS): đúng định nghĩa dữ liệu vượt khả năng một công cụ một máy. Thêm vào đó là velocity của dữ liệu cảm biến liên tục. |
+| Vì sao pandas nhanh hơn Spark ở dữ liệu nhỏ? | Spark tốn chi phí khởi động JVM, lập kế hoạch, shuffle, tuần tự hóa. Số đo của nhóm: 34 triệu giá trị pandas 85 s so với Spark 105 s, nhưng pandas đã dùng 9,4 GB; 62 triệu giá trị thì pandas hết bộ nhớ, Spark vẫn chạy. Lợi ích của Spark xuất hiện khi dữ liệu vượt RAM một máy hoặc khi thêm máy. |
 | Vì sao chạy cluster trên 1 máy lại chậm hơn local? | Cùng số core vật lý nhưng thêm chi phí mạng giữa container, khởi tạo executor, shuffle qua network; cluster chỉ có lợi khi thêm máy thật. Đây là kết quả trung thực cần nêu. |
 | Mô hình được triển khai vào streaming thế nào? | Interface `BaseImputer/BaseForecaster`, file `.joblib`, cấu hình bằng biến môi trường; chạy phân tán `groupBy(station).applyInPandas`, nạp model 1 lần mỗi worker. |
 | Vì sao chỉ dùng imputer causal online? | Online không có dữ liệu tương lai; dùng phương pháp nhìn cả 2 phía sẽ gây rò rỉ thông tin (leakage) và không khả thi thời gian thực. |

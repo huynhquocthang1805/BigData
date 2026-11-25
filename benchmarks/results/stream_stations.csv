@@ -1,0 +1,4 @@
+mode,cores,ml,target_rate,messages,producer_rate,duration_s,processed_rows,throughput_rows_s,spark_processed_rps_median,latency_p50_ms,latency_p95_ms,latency_max_ms,batches,batch_ms_median,drain_s,host_cpus,stations
+cluster,4,True,1000,45000,1000,45.0,45000,938,1165,5520,7878,25267,6,5110,3.0,4,10
+cluster,4,True,1000,45000,1000,45.0,45000,918,1245,6341,8510,23657,6,5586,4.0,4,50
+cluster,4,True,1000,45000,1000,45.0,45000,898,1261,7873,11916,27870,5,7810,5.1,4,100

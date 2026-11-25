@@ -77,6 +77,8 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--start", help="ghi đè thời điểm bắt đầu (ISO)")
     ap.add_argument("--end", help="ghi đè thời điểm kết thúc (ISO, exclusive)")
     ap.add_argument("--stations", nargs="*")
+    ap.add_argument("--max-stations", type=int,
+                    help="chỉ phát N trạm nhiều bản ghi nhất (so sánh độ trễ theo số trạm trên cùng bộ dữ liệu)")
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--speedup", type=float, default=3600.0)
     mode.add_argument("--rate", type=float, help="message/giây cố định (benchmark)")
@@ -97,6 +99,9 @@ def main(argv: list[str] | None = None) -> None:
     df = load_replay_frame(args.lake, start, end, args.stations)
     if df.empty:
         sys.exit(f"Không có dữ liệu silver trong [{start}, {end}). Hãy chạy batch ETL trước.")
+    if args.max_stations and df["station_id"].nunique() > args.max_stations:
+        counts = df.groupby("station_id").size().sort_values(ascending=False, kind="stable")  # hòa: theo mã trạm
+        df = df[df["station_id"].isin(counts.index[: args.max_stations])].reset_index(drop=True)
     if args.limit:  # chỉ chuẩn bị đúng số bản ghi cần gửi (nạp nhanh hơn khi benchmark)
         df = df.iloc[: math.ceil(args.limit / max(1, args.replicate))].reset_index(drop=True)
     bodies = serialize_bodies(df)

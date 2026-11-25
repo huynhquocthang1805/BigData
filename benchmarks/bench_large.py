@@ -30,18 +30,32 @@ def count_stations(landing: str) -> int:
     return len({p.split("station_id=")[1].split("/")[0] for p in glob.glob(f"{landing}/station_id=*/parameter_code=*/*.csv*")})
 
 
-def run_pandas_subprocess(landing: str, work: str) -> dict:
+def run_pandas_subprocess(landing: str, work: str, mem_gb: float | None = None) -> dict:
+    """pandas chạy trong tiến trình con để đo RSS đỉnh. mem_gb: giới hạn bộ nhớ dữ liệu (RLIMIT_DATA, tính cả mmap
+    ẩn danh) để pandas báo MemoryError gọn gàng thay vì kích hoạt OOM killer làm sập các dịch vụ khác trên máy."""
     code = ("import json; from benchmarks.bench_batch import run_pandas; "
             f"print('RESULT', json.dumps(run_pandas({landing!r}, {work!r}, 1)))")
+
+    def limit_memory() -> None:
+        lim = int(mem_gb * 1024 ** 3)
+        resource.setrlimit(resource.RLIMIT_DATA, (lim, lim))
+
+    limit_note = f"giới hạn {mem_gb:g} GB" if mem_gb else ""
     before = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
-    proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    t0 = time.time()
+    proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                          preexec_fn=limit_memory if mem_gb else None)
+    elapsed = time.time() - t0
     peak = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
     if proc.returncode != 0:
+        reason = (proc.stderr.strip().splitlines() or ["?"])[-1][:120]
+        if proc.returncode < 0:
+            reason = f"bị dừng bởi tín hiệu {-proc.returncode}"
         return {"engine": "pandas", "mode": "single-process", "storage": "local", "cores": 1,
-                "note": "FAILED: " + (proc.stderr.strip().splitlines() or ["?"])[-1][:120],
+                "note": f"FAILED sau {elapsed:.0f}s" + (f" ({limit_note})" if limit_note else "") + f": {reason}",
                 "peak_rss_mb": round(max(peak, before) / 1024)}
     res = json.loads(proc.stdout.split("RESULT", 1)[1])
-    res.update({"storage": "local", "peak_rss_mb": round(peak / 1024), "note": ""})
+    res.update({"storage": "local", "peak_rss_mb": round(peak / 1024), "note": limit_note})
     return res
 
 
@@ -71,6 +85,8 @@ def main() -> None:
     ap.add_argument("--cluster", default="spark://spark-master:7077")
     ap.add_argument("--cores", type=int, default=4)
     ap.add_argument("--skip-pandas", action="store_true")
+    ap.add_argument("--pandas-mem-gb", type=float, default=None,
+                    help="giới hạn bộ nhớ cho tiến trình pandas (GB), vd. bằng RAM còn trống của máy")
     ap.add_argument("--out", default="benchmarks/results/batch_large.csv")
     args = ap.parse_args()
 
@@ -90,7 +106,7 @@ def main() -> None:
             print(json.dumps(row, ensure_ascii=False), flush=True)
 
         if not args.skip_pandas:
-            record(run_pandas_subprocess(args.landing, args.work))
+            record(run_pandas_subprocess(args.landing, args.work, args.pandas_mem_gb))
         local_lake = f"{args.work}/lake_local"
         record(run_spark(args.landing, local_lake, f"local[{args.cores}]", args.cores, "local"))
         shutil.rmtree(local_lake, ignore_errors=True)
