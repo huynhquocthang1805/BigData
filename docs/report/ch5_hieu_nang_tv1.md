@@ -156,6 +156,8 @@ Sau khi chạy, HDFS chứa: dữ liệu thô 103,6 MiB, bronze 225,3 MiB, silve
 chiếm gấp đôi trên đĩa do nhân bản). `hdfs fsck /wq`: HEALTHY, 1.537 tệp, 1.531 block, kích thước block trung bình
 0,3 MB, không block nào thiếu bản sao.
 
+*Hình 5.v — `benchmarks/results/batch_large.png`.*
+
 **Nhận xét.**
 1. pandas vẫn nhanh nhất nhưng đã dùng 9,4 GB (RSS đỉnh 9.651 MiB), tức 60% RAM của máy, cho 34 triệu giá trị. Bộ nhớ của pandas tăng
    gần tuyến tính theo dữ liệu (5,9 GB ở 23,8 triệu giá trị, mục 5.4), nên với đủ 235 trạm (ước tính khoảng
@@ -187,6 +189,8 @@ trong 45 giây; kết quả trong `benchmarks/results/stream_large.csv`.
 | 4.000 msg/s | 56 | 180.000 / 180.000 | 3.448 | 15,8 s | 23,7 s | 13,6 s | 7,2 s |
 
 (Dòng 10 trạm lấy từ bảng 5.y.)
+
+*Hình 5.u — `benchmarks/results/stream_large_latency.png`.*
 
 **Nhận xét.**
 1. Không mất bản ghi nào ở cả hai mức. Tốc độ xử lý của Spark (trung vị 1.289 và 4.424 bản ghi/s) cao hơn tốc độ

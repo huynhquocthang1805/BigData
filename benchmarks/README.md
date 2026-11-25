@@ -103,6 +103,8 @@ Bộ trạm lớn chốt ở 56 trạm thật (15 bang và Puerto Rico), 970 t�
 - Cluster + HDFS chậm hơn local 1,47× (bộ chuẩn: 1,89×): chi phí cố định của cụm được chia cho nhiều dữ liệu hơn.
 - Dữ liệu thật chậm hơn dữ liệu nhân bản (326 nghìn so với 485 nghìn giá trị/s ở local[4]) do giải nén gzip và 970 tệp nhỏ.
 
+![](results/batch_large.png)
+
 ### HDFS so với đĩa cục bộ (bộ chuẩn 5,96 triệu giá trị, Spark local[4])
 
 | Nơi ghi data lake | Thời gian (s) | Trên đĩa |
@@ -122,6 +124,8 @@ Bộ trạm lớn chốt ở 56 trạm thật (15 bang và Puerto Rico), 970 t�
 
 - Không mất bản ghi; chi phí ML tăng theo số trạm (một nhóm pandas mỗi trạm mỗi micro-batch).
 - Lần chạy đầu lộ lỗi kiểu dữ liệu khi một trạm không có DO; đã sửa và có test hồi quy.
+
+![](results/stream_large_latency.png)
 
 ### Streaming Kafka → Spark (cluster 4 core, trigger 2 s) → PostgreSQL
 

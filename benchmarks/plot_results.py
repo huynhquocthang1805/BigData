@@ -155,6 +155,76 @@ def plot_stream(csv: Path, out: Path) -> None:
         save(fig, out / f"stream_throughput_{suffix}.png")
 
 
+def vn(x: float, nd: int = 1) -> str:
+    """Số kiểu Việt Nam: dấu phẩy thập phân, dấu chấm phân nghìn (khớp cách viết trong báo cáo)."""
+    return f"{x:,.{nd}f}".replace(",", " ").replace(".", ",").replace(" ", ".")
+
+
+def plot_large(res: Path, out: Path) -> None:
+    """Dữ liệu thật quy mô lớn: thời gian ETL theo cấu hình (batch_large.csv) và độ trễ streaming có ML theo số
+    trạm (stream_scaling.csv: 10 trạm chuẩn; stream_large.csv: bộ trạm lớn)."""
+    bl, sl, ss = res / "batch_large.csv", res / "stream_large.csv", res / "stream_scaling.csv"
+    n_large = int(pd.read_csv(bl).stations.max()) if bl.exists() else None
+
+    if bl.exists():
+        df = pd.read_csv(bl).groupby(["engine", "mode", "storage"], as_index=False).agg(
+            total_s=("total_s", "median"), input_values=("input_values", "first"),
+            peak_rss_mb=("peak_rss_mb", "max"), host_cpus=("host_cpus", "first"))
+        labels = {("pandas", "single-process", "local"): "pandas (1 tiến trình)",
+                  ("spark", "local", "local"): "Spark local[4], đĩa cục bộ",
+                  ("spark", "cluster", "hdfs"): "Cụm Spark 4 core, đọc/ghi HDFS"}
+        have = set(zip(df.engine, df["mode"], df.storage))
+        rows = [df[(df.engine == e) & (df["mode"] == m) & (df.storage == s)].iloc[0]
+                for (e, m, s) in labels if (e, m, s) in have]
+        keys = [k for k in labels if k in have]
+        fig, ax = plt.subplots(figsize=(8, 3.2))
+        ys = list(range(len(rows)))
+        ax.barh(ys, [r.total_s for r in rows], height=0.5, color=SERIES[0])
+        for y, r in zip(ys, rows):
+            txt = f"{vn(r.total_s)} s"
+            if r.engine == "pandas" and pd.notna(r.peak_rss_mb):
+                txt += f"   RAM đỉnh {vn(r.peak_rss_mb / 1024)} GB"
+            ax.annotate(txt, (r.total_s, y), xytext=(6, 0), textcoords="offset points", va="center",
+                        fontsize=9, color=INK)
+        ax.set_yticks(ys, [labels[k] for k in keys])
+        ax.invert_yaxis()
+        mv = rows[0].input_values / 1e6
+        note = (f"{n_large} trạm USGS thật, {vn(mv)} triệu giá trị thô; máy {int(rows[0].host_cpus)} vCPU, Docker. "
+                f"Nguồn: {bl.name}")
+        style(ax, f"ETL {vn(mv)} triệu giá trị thật: thời gian theo cấu hình", "Thời gian ETL (giây)", "", note)
+        ax.grid(False)
+        ax.grid(axis="x", color=GRID, linewidth=0.8)
+        ax.set_xlim(0, max(r.total_s for r in rows) * 1.5)  # chừa chỗ cho nhãn giá trị
+        save(fig, out / "batch_large.png")
+
+    if sl.exists():
+        groups = []  # (nhãn cấu hình, p50 giây, p95 giây)
+        frames = [(pd.read_csv(ss), "10 trạm")] if ss.exists() else []
+        frames.append((pd.read_csv(sl), f"{n_large} trạm" if n_large else "bộ lớn"))
+        for frame_, tag in frames:
+            ml = frame_[frame_.ml.astype(str) == "True"]
+            for rate, g in ml.groupby("target_rate"):
+                groups.append((f"{tag}\n{vn(rate, 0)} msg/s", g.latency_p50_ms.median() / 1000,
+                               g.latency_p95_ms.median() / 1000))
+        fig, ax = plt.subplots(figsize=(8, 4.2))
+        xs = list(range(len(groups)))
+        w = 0.3
+        for j, (name, idx) in enumerate([("p50", 1), ("p95", 2)]):
+            pos = [x + (j - 0.5) * (w + 0.04) for x in xs]
+            vals = [g[idx] for g in groups]
+            ax.bar(pos, vals, width=w, color=SERIES[j], label=name)
+            for x, v in zip(pos, vals):
+                ax.annotate(f"{vn(v)} s", (x, v), xytext=(0, 3), textcoords="offset points", ha="center",
+                            fontsize=9, color=INK)
+        ax.set_xticks(xs, [g[0] for g in groups])
+        style(ax, "Độ trễ streaming khi bật điền khuyết và dự báo, theo số trạm", "",
+              "Độ trễ producer → PostgreSQL (giây)",
+              f"Cụm Spark 4 core, trigger 2 s, Kafka 6 partition. Nguồn: {ss.name}, {sl.name}")
+        ax.legend(frameon=False, labelcolor=INK2, loc="upper left")
+        ax.set_ylim(0, max(g[2] for g in groups) * 1.18)
+        save(fig, out / "stream_large_latency.png")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="benchmarks/results")
@@ -170,6 +240,9 @@ def main() -> None:
     if has_rows(res / "stream_scaling.csv"):
         print("Streaming:")
         plot_stream(res / "stream_scaling.csv", res)
+    if has_rows(res / "batch_large.csv") or has_rows(res / "stream_large.csv"):
+        print("Dữ liệu thật quy mô lớn:")
+        plot_large(res, res)
 
 
 if __name__ == "__main__":
