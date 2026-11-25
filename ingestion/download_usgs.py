@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gzip
+import http.client
 import io
 import json
 import os
@@ -27,15 +29,15 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from wq import contracts
+from wq.config import get_settings
 
 API_BASE = os.getenv("USGS_API_BASE", "https://api.waterdata.usgs.gov/ogcapi/v1")
 PAGE_LIMIT = 50_000
 OUT_COLUMNS = ["time", "value", "approval_status", "qualifier"]
-DEFAULT_STATIONS_FILE = Path("config/stations.json")
 
 
 def _request(url: str, retries: int = 6) -> bytes:
@@ -46,7 +48,7 @@ def _request(url: str, retries: int = 6) -> bytes:
     for attempt in range(retries):
         try:
             req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=180) as resp:
+            with urllib.request.urlopen(req, timeout=600) as resp:
                 return resp.read()
         except urllib.error.HTTPError as e:
             if e.code in (429, 500, 502, 503, 504) and attempt < retries - 1:
@@ -56,7 +58,7 @@ def _request(url: str, retries: int = 6) -> bytes:
                 delay *= 2
                 continue
             raise
-        except (urllib.error.URLError, TimeoutError) as e:
+        except (urllib.error.URLError, TimeoutError, http.client.IncompleteRead, ConnectionError) as e:
             if attempt < retries - 1:
                 print(f"  {e}, retry sau {delay:.0f}s ...", file=sys.stderr)
                 time.sleep(delay)
@@ -91,6 +93,70 @@ def fetch_continuous(site: str, param: str, start: datetime, end: datetime) -> l
     return [r for r in rows if not r["time"].startswith(end_s)]
 
 
+LEGACY_BASE = os.getenv("USGS_LEGACY_BASE", "https://nwis.waterservices.usgs.gov/nwis/iv/")
+
+
+def fetch_legacy_site_year(site: str, params: list[str], a: datetime, b: datetime) -> dict[str, list[dict]]:
+    """Dịch vụ Instantaneous Values (IV) cũ của USGS: lấy MỌI thông số của 1 trạm trong 1 request.
+
+    Cùng dữ liệu đo tức thời như collection `continuous` của API mới, nhưng ít request hơn ~6 lần
+    (API mới giới hạn số request/giờ). Thời gian trả về theo giờ địa phương -> đổi về UTC.
+    """
+    out: dict[str, list[dict]] = {p: [] for p in params}
+    # Chia theo quý: phản hồi nhỏ (~3-4 MB) => ít bị cắt kết nối giữa chừng hơn 1 request cả năm (~15 MB)
+    edges = [a] + [datetime(a.year, m, 1, tzinfo=timezone.utc) for m in (4, 7, 10) if a < datetime(a.year, m, 1, tzinfo=timezone.utc) < b] + [b]
+    for qa, qb in zip(edges[:-1], edges[1:]):
+        query = {"format": "json", "sites": site.replace("USGS-", ""), "parameterCd": ",".join(params),
+                 "startDT": f"{qa:%Y-%m-%dT%H:%MZ}", "endDT": f"{qb - timedelta(minutes=1):%Y-%m-%dT%H:%MZ}",
+                 "siteStatus": "all"}
+        data = json.loads(_request(f"{LEGACY_BASE}?{urllib.parse.urlencode(query)}"))
+        for ts in data["value"]["timeSeries"]:
+            code = ts["variable"]["variableCode"][0]["value"]
+            if code not in out:
+                continue
+            nodata = ts["variable"].get("noDataValue")
+            for block in ts["values"]:
+                for v in block["value"]:
+                    t = datetime.fromisoformat(v["dateTime"]).astimezone(timezone.utc)
+                    if not (qa <= t < qb):
+                        continue
+                    val = v.get("value", "")
+                    if nodata is not None and val not in ("", None) and float(val) == float(nodata):
+                        val = ""
+                    quals = v.get("qualifiers") or []
+                    approval = "Approved" if "A" in quals else ("Provisional" if "P" in quals else "")
+                    out[code].append({"time": f"{t:%Y-%m-%d %H:%M:%S}+00:00", "value": val, "approval_status": approval,
+                                      "qualifier": ",".join(q for q in quals if q not in ("A", "P"))})
+    return out
+
+
+def write_rows(path: Path, rows: list[dict], gzip_out: bool) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.parent / ("." + path.name + ".tmp")  # tên bắt đầu bằng "." => Spark bỏ qua nếu bị ngắt giữa chừng
+    opener = (lambda f: gzip.open(f, "wt", newline="")) if gzip_out else (lambda f: open(f, "w", newline=""))
+    with opener(tmp) as f:
+        w = csv.DictWriter(f, fieldnames=OUT_COLUMNS)
+        w.writeheader()
+        w.writerows(rows)
+    tmp.replace(path)
+
+
+def download_legacy_one(out_dir: Path, site: str, params: list[str], year: int, a: datetime, b: datetime,
+                        force: bool, gzip_out: bool) -> tuple[str, int]:
+    name = f"{year}.csv.gz" if gzip_out else f"{year}.csv"
+    paths = {p: out_dir / f"station_id={site}" / f"parameter_code={p}" / name for p in params}
+    todo = [p for p in params if force or not paths[p].exists()]
+    if not todo:
+        return f"skip {site} {year}", -1
+    data = fetch_legacy_site_year(site, todo, a, b)
+    n = 0
+    for p in todo:
+        if force or not paths[p].exists():   # tiến trình khác có thể vừa ghi xong file này
+            write_rows(paths[p], data[p], gzip_out)
+            n += len(data[p])
+    return f"ok   {site} {year} ({len(todo)} thông số, {n} rows)", n
+
+
 def year_chunks(start: datetime, end: datetime):
     y = start.year
     while True:
@@ -102,14 +168,17 @@ def year_chunks(start: datetime, end: datetime):
         y += 1
 
 
-def download_one(out_dir: Path, site: str, param: str, year: int, a: datetime, b: datetime, force: bool) -> tuple[str, int]:
-    path = out_dir / f"station_id={site}" / f"parameter_code={param}" / f"{year}.csv"
+def download_one(out_dir: Path, site: str, param: str, year: int, a: datetime, b: datetime, force: bool,
+                 gzip_out: bool = False) -> tuple[str, int]:
+    name = f"{year}.csv.gz" if gzip_out else f"{year}.csv"
+    path = out_dir / f"station_id={site}" / f"parameter_code={param}" / name
     if path.exists() and not force:
         return f"skip {path}", -1
     rows = fetch_continuous(site, param, a, b)
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".csv.tmp")
-    with tmp.open("w", newline="") as f:
+    tmp = path.parent / ("." + name + ".tmp")  # tên bắt đầu bằng "." => Spark bỏ qua nếu bị ngắt giữa chừng
+    opener = (lambda f: gzip.open(f, "wt", newline="")) if gzip_out else (lambda f: open(f, "w", newline=""))
+    with opener(tmp) as f:
         w = csv.DictWriter(f, fieldnames=OUT_COLUMNS)
         w.writeheader()
         w.writerows(rows)
@@ -155,14 +224,21 @@ def load_station_ids(stations_file: Path) -> list[str]:
 
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--stations-file", type=Path, default=DEFAULT_STATIONS_FILE)
+    cfg = get_settings()
+    ap.add_argument("--stations-file", type=Path, default=Path(cfg.stations_file))
     ap.add_argument("--sites", nargs="*", help="Danh sách station_id (mặc định lấy từ --stations-file)")
     ap.add_argument("--params", nargs="*", default=list(contracts.USGS_CODE_TO_NAME), help="USGS parameter codes")
     ap.add_argument("--start", default=contracts.DATA_START)
     ap.add_argument("--end", default=contracts.DATA_END, help="exclusive")
-    ap.add_argument("--out", type=Path, default=Path("data/raw/usgs"))
+    ap.add_argument("--out", type=Path, default=Path(cfg.landing_path), help="landing zone (mặc định WQ_LANDING_PATH)")
     ap.add_argument("--workers", type=int, default=4, help="Số request song song (đừng để quá cao để tránh 429)")
     ap.add_argument("--force", action="store_true", help="Tải lại cả file đã có")
+    ap.add_argument("--gzip", action="store_true", default=cfg.raw_gzip,
+                    help="Ghi CSV nén gzip (dataset lớn; Spark đọc trực tiếp .csv.gz). Mặc định theo WQ_RAW_GZIP")
+    ap.add_argument("--quiet", action="store_true", help="Chỉ in tiến độ mỗi 100 file")
+    ap.add_argument("--source", choices=["ogc", "legacy"], default="ogc",
+                    help="ogc = API mới (1 request/thông số/năm); legacy = dịch vụ IV cũ (1 request/trạm/năm, mọi thông số)")
+    ap.add_argument("--reverse", action="store_true", help="duyệt danh sách trạm từ cuối (chạy song song 2 nguồn)")
     ap.add_argument("--refresh-metadata", action="store_true", help="Cập nhật tên/tọa độ trạm vào --stations-file")
     args = ap.parse_args(argv)
 
@@ -173,19 +249,29 @@ def main(argv: list[str] | None = None) -> None:
 
     start = datetime.fromisoformat(args.start).replace(tzinfo=timezone.utc)
     end = datetime.fromisoformat(args.end).replace(tzinfo=timezone.utc)
-    jobs = [(s, p, y, a, b) for s in sites for p in args.params for (y, a, b) in year_chunks(start, end)]
-    print(f"{len(sites)} trạm x {len(args.params)} thông số x {len(list(year_chunks(start, end)))} năm = {len(jobs)} file")
+    if args.reverse:
+        sites = list(reversed(sites))
+    chunks = list(year_chunks(start, end))
+    if args.source == "legacy":
+        jobs = [(s, y, a, b) for s in sites for (y, a, b) in chunks]
+        submit = lambda ex, job: ex.submit(download_legacy_one, args.out, job[0], args.params, *job[1:], args.force, args.gzip)
+        print(f"[legacy] {len(sites)} trạm x {len(chunks)} năm = {len(jobs)} request (mỗi request {len(args.params)} thông số)")
+    else:
+        jobs = [(s, p, y, a, b) for s in sites for p in args.params for (y, a, b) in chunks]
+        submit = lambda ex, job: ex.submit(download_one, args.out, *job, args.force, args.gzip)
+        print(f"{len(sites)} trạm x {len(args.params)} thông số x {len(chunks)} năm = {len(jobs)} file")
 
     t0, total = time.time(), 0
     with ThreadPoolExecutor(max_workers=args.workers) as ex:
-        futs = {ex.submit(download_one, args.out, *job, args.force): job for job in jobs}
+        futs = {submit(ex, job): job for job in jobs}
         for i, fut in enumerate(as_completed(futs), 1):
             try:
                 msg, n = fut.result()
                 total += max(n, 0)
-                print(f"[{i}/{len(jobs)}] {msg}")
+                if not args.quiet or i % 25 == 0 or i == len(jobs):
+                    print(f"[{i}/{len(jobs)}] {msg}  | tổng {total:,} giá trị, {time.time() - t0:.0f}s", flush=True)
             except Exception as e:  # không dừng cả quá trình vì 1 file lỗi
-                print(f"[{i}/{len(jobs)}] FAIL {futs[fut][:3]}: {e}", file=sys.stderr)
+                print(f"[{i}/{len(jobs)}] FAIL {futs[fut][:3]}: {e}", file=sys.stderr, flush=True)
     print(f"Xong: {total:,} giá trị mới trong {time.time() - t0:.0f}s -> {args.out}")
 
 

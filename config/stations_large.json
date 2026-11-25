@@ -1,0 +1,2364 @@
+{
+  "contract_version": "1.0.0",
+  "source": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/continuous",
+  "parameters": {
+    "water_temp": "00010",
+    "specific_conductance": "00095",
+    "ph": "00400",
+    "dissolved_oxygen": "00300",
+    "turbidity": "63680",
+    "discharge": "00060"
+  },
+  "stations": [
+    {
+      "station_id": "USGS-01127768",
+      "name": "THAMES R AT GROTON, CT.",
+      "state": "Connecticut",
+      "site_type": "Estuary",
+      "latitude": 41.344444,
+      "longitude": -72.088611,
+      "drainage_area_sqmi": null,
+      "huc": "020302030000"
+    },
+    {
+      "station_id": "USGS-01184000",
+      "name": "CONNECTICUT RIVER AT THOMPSONVILLE, CT",
+      "state": "Connecticut",
+      "site_type": "Stream",
+      "latitude": 41.987204616172,
+      "longitude": -72.6053482565335,
+      "drainage_area_sqmi": 9660.0,
+      "huc": "010802050105"
+    },
+    {
+      "station_id": "USGS-01191000",
+      "name": "NORTH BRANCH PARK RIVER AT HARTFORD, CT",
+      "state": "Connecticut",
+      "site_type": "Stream",
+      "latitude": 41.784438888888886,
+      "longitude": -72.70805555555556,
+      "drainage_area_sqmi": 26.8,
+      "huc": "010802050302"
+    },
+    {
+      "station_id": "USGS-01193050",
+      "name": "CONNECTICUT RIVER AT MIDDLE HADDAM, CT",
+      "state": "Connecticut",
+      "site_type": "Tidal stream",
+      "latitude": 41.54165281366759,
+      "longitude": -72.55312768493529,
+      "drainage_area_sqmi": 10897.0,
+      "huc": "010802050702"
+    },
+    {
+      "station_id": "USGS-01194796",
+      "name": "CONNECTICUT RIVER AT OLD LYME, CT",
+      "state": "Connecticut",
+      "site_type": "Estuary",
+      "latitude": 41.31248746834132,
+      "longitude": -72.34590046637659,
+      "drainage_area_sqmi": 11224.0,
+      "huc": "010802050905"
+    },
+    {
+      "station_id": "USGS-01208837",
+      "name": "HOUSATONIC RIVER NR NELLS ISLAND NR STRATFORD, CT",
+      "state": "Connecticut",
+      "site_type": "Estuary",
+      "latitude": 41.18843333333333,
+      "longitude": -73.12125277777777,
+      "drainage_area_sqmi": null,
+      "huc": "020302030000"
+    },
+    {
+      "station_id": "USGS-01302020",
+      "name": "BRONX RIVER AT NY BOTANICAL GARDEN AT BRONX NY",
+      "state": "New York",
+      "site_type": "Stream",
+      "latitude": 40.8623055555556,
+      "longitude": -73.8743888888889,
+      "drainage_area_sqmi": 38.4,
+      "huc": "020301020103"
+    },
+    {
+      "station_id": "USGS-01304650",
+      "name": "SHELTER ISLAND SOUND AT SHELTER ISLAND NY",
+      "state": "New York",
+      "site_type": "Estuary",
+      "latitude": 41.04430555555555,
+      "longitude": -72.31697222222222,
+      "drainage_area_sqmi": null,
+      "huc": "020302020701"
+    },
+    {
+      "station_id": "USGS-0135749950",
+      "name": "MOHAWK RIVER DIVERSION TO POWER PLANT AT COHOES NY",
+      "state": "New York",
+      "site_type": "Stream",
+      "latitude": 42.785694,
+      "longitude": -73.710417,
+      "drainage_area_sqmi": 1.67,
+      "huc": "020200041110"
+    },
+    {
+      "station_id": "USGS-01372043",
+      "name": "HUDSON RIVER NEAR POUGHKEEPSIE NY",
+      "state": "New York",
+      "site_type": "Estuary",
+      "latitude": 41.72058333333334,
+      "longitude": -73.93875,
+      "drainage_area_sqmi": 11833.0,
+      "huc": "020200080104"
+    },
+    {
+      "station_id": "USGS-01376520",
+      "name": "HUDSON RIVER AT PIER 25 AT NEW YORK NY",
+      "state": "New York",
+      "site_type": "Stream",
+      "latitude": 40.721528,
+      "longitude": -74.015611,
+      "drainage_area_sqmi": null,
+      "huc": "020301010405"
+    },
+    {
+      "station_id": "USGS-01389005",
+      "name": "Passaic River below Pompton Riv at Two Bridges NJ",
+      "state": "New Jersey",
+      "site_type": "Stream",
+      "latitude": 40.896388888888886,
+      "longitude": -74.26916666666666,
+      "drainage_area_sqmi": 740.0,
+      "huc": "020301030801"
+    },
+    {
+      "station_id": "USGS-01400500",
+      "name": "Raritan River at Manville NJ",
+      "state": "New Jersey",
+      "site_type": "Stream",
+      "latitude": 40.5555555555556,
+      "longitude": -74.5827777777778,
+      "drainage_area_sqmi": 490.0,
+      "huc": "020301050501"
+    },
+    {
+      "station_id": "USGS-01402000",
+      "name": "Millstone River at Blackwells Mills NJ",
+      "state": "New Jersey",
+      "site_type": "Stream",
+      "latitude": 40.475,
+      "longitude": -74.5758333333333,
+      "drainage_area_sqmi": 258.0,
+      "huc": "020301050312"
+    },
+    {
+      "station_id": "USGS-01427207",
+      "name": "DELAWARE RIVER AT LORDVILLE NY",
+      "state": "Pennsylvania",
+      "site_type": "Stream",
+      "latitude": 41.8672777777778,
+      "longitude": -75.21375,
+      "drainage_area_sqmi": 1590.0,
+      "huc": "020401010406"
+    },
+    {
+      "station_id": "USGS-01438500",
+      "name": "Delaware River at Montague NJ",
+      "state": "Pennsylvania",
+      "site_type": "Stream",
+      "latitude": 41.3091666666667,
+      "longitude": -74.7952777777778,
+      "drainage_area_sqmi": 3480.0,
+      "huc": "020401040704"
+    },
+    {
+      "station_id": "USGS-01458500",
+      "name": "Delaware River at Frenchtown NJ",
+      "state": "New Jersey",
+      "site_type": "Stream",
+      "latitude": 40.5261111111111,
+      "longitude": -75.065,
+      "drainage_area_sqmi": 6420.0,
+      "huc": "020401050904"
+    },
+    {
+      "station_id": "USGS-01463500",
+      "name": "Delaware River at Trenton NJ",
+      "state": "New Jersey",
+      "site_type": "Stream",
+      "latitude": 40.2216666666667,
+      "longitude": -74.7780555555556,
+      "drainage_area_sqmi": 6780.0,
+      "huc": "020401050911"
+    },
+    {
+      "station_id": "USGS-014670261",
+      "name": "Delaware River at Pennypack Woods PA",
+      "state": "Pennsylvania",
+      "site_type": "Stream",
+      "latitude": 40.0385,
+      "longitude": -74.9936111111111,
+      "drainage_area_sqmi": 7800.0,
+      "huc": "020402020305"
+    },
+    {
+      "station_id": "USGS-01467042",
+      "name": "Pennypack Creek at Pine Road, at Philadelphia, PA",
+      "state": "Pennsylvania",
+      "site_type": "Stream",
+      "latitude": 40.08973339892317,
+      "longitude": -75.06905170053962,
+      "drainage_area_sqmi": 37.9,
+      "huc": "020402020304"
+    },
+    {
+      "station_id": "USGS-01467048",
+      "name": "Pennypack Cr at Lower Rhawn St Bdg, Phila., PA",
+      "state": "Pennsylvania",
+      "site_type": "Stream",
+      "latitude": 40.05001153037398,
+      "longitude": -75.03266187380927,
+      "drainage_area_sqmi": 49.8,
+      "huc": "020402020304"
+    },
+    {
+      "station_id": "USGS-01473500",
+      "name": "Schuylkill River at Norristown, PA",
+      "state": "Pennsylvania",
+      "site_type": "Stream",
+      "latitude": 40.1155555555556,
+      "longitude": -75.3561111111111,
+      "drainage_area_sqmi": 1760.0,
+      "huc": "020402031006"
+    },
+    {
+      "station_id": "USGS-01481000",
+      "name": "Brandywine Creek at Chadds Ford, PA",
+      "state": "Pennsylvania",
+      "site_type": "Stream",
+      "latitude": 39.8698328047907,
+      "longitude": -75.5932623253475,
+      "drainage_area_sqmi": 287.0,
+      "huc": "020402050401"
+    },
+    {
+      "station_id": "USGS-01575900",
+      "name": "Chiques Creek near Marietta, PA",
+      "state": "Pennsylvania",
+      "site_type": "Stream",
+      "latitude": 40.0628745131979,
+      "longitude": -76.5155213960526,
+      "drainage_area_sqmi": 108.0,
+      "huc": "020503060804"
+    },
+    {
+      "station_id": "USGS-01576003",
+      "name": "Susquehanna River at Columbia, PA",
+      "state": "Pennsylvania",
+      "site_type": "Stream",
+      "latitude": 40.0284308143983,
+      "longitude": -76.5177432122412,
+      "drainage_area_sqmi": null,
+      "huc": "020503061704"
+    },
+    {
+      "station_id": "USGS-01638500",
+      "name": "POTOMAC RIVER AT POINT OF ROCKS, MD",
+      "state": "Maryland",
+      "site_type": "Stream",
+      "latitude": 39.273583333333335,
+      "longitude": -77.5431111111111,
+      "drainage_area_sqmi": 9651.0,
+      "huc": "020700080401"
+    },
+    {
+      "station_id": "USGS-0164578734",
+      "name": "SNAKEDEN BRANCH ABOVE LAKE AUDUBON AT RESTON, VA",
+      "state": "Virginia",
+      "site_type": "Stream",
+      "latitude": 38.929661,
+      "longitude": -77.341139,
+      "drainage_area_sqmi": 1.27,
+      "huc": "020700081004"
+    },
+    {
+      "station_id": "USGS-0164579522",
+      "name": "THE GLADE NEAR HOWLAND DRIVE AT RESTON, VA",
+      "state": "Virginia",
+      "site_type": "Stream",
+      "latitude": 38.925599999999996,
+      "longitude": -77.32933888888888,
+      "drainage_area_sqmi": 1.14,
+      "huc": "020700081004"
+    },
+    {
+      "station_id": "USGS-01654107",
+      "name": "LONG BRANCH AT OLLEY LANE NR FAIRFAX, VA",
+      "state": "Virginia",
+      "site_type": "Stream",
+      "latitude": 38.824600000000004,
+      "longitude": -77.2667,
+      "drainage_area_sqmi": 1.19,
+      "huc": "020700100402"
+    },
+    {
+      "station_id": "USGS-02054550",
+      "name": "ROANOKE RIVER AT RTS 639/760 AT SALEM, VA",
+      "state": "Virginia",
+      "site_type": "Stream",
+      "latitude": 37.278056,
+      "longitude": -80.105278,
+      "drainage_area_sqmi": 296.0,
+      "huc": "030101010301"
+    },
+    {
+      "station_id": "USGS-0205551614",
+      "name": "TINKER CREEK ABOVE GLADE CREEK AT ROANOKE, VA",
+      "state": "Virginia",
+      "site_type": "Stream",
+      "latitude": 37.2778888888889,
+      "longitude": -79.9093611111111,
+      "drainage_area_sqmi": 78.0,
+      "huc": "03010101"
+    },
+    {
+      "station_id": "USGS-02110550",
+      "name": "WACCAMAW RIVER ABOVE CONWAY, SC",
+      "state": "South Carolina",
+      "site_type": "Tidal stream",
+      "latitude": 33.8508333333333,
+      "longitude": -78.8972222222222,
+      "drainage_area_sqmi": 1250.0,
+      "huc": "03040206"
+    },
+    {
+      "station_id": "USGS-02198840",
+      "name": "SAVANNAH RIVER I-95 NEAR PORT WENTWORTH, GA",
+      "state": "Georgia",
+      "site_type": "Tidal stream",
+      "latitude": 32.2354722222222,
+      "longitude": -81.1510833333333,
+      "drainage_area_sqmi": null,
+      "huc": "03060109"
+    },
+    {
+      "station_id": "USGS-02198920",
+      "name": "SAVANNAH RIVER AT GA 25, AT PORT WENTWORTH, GA",
+      "state": "Georgia",
+      "site_type": "Tidal stream",
+      "latitude": 32.1653333333333,
+      "longitude": -81.1549166666667,
+      "drainage_area_sqmi": null,
+      "huc": "03060109"
+    },
+    {
+      "station_id": "USGS-02198950",
+      "name": "MIDDLE RIVER AT GA 25 AT PORT WENTWORTH, GA",
+      "state": "Georgia",
+      "site_type": "Tidal stream",
+      "latitude": 32.1657222222222,
+      "longitude": -81.1379722222222,
+      "drainage_area_sqmi": null,
+      "huc": "03060109"
+    },
+    {
+      "station_id": "USGS-02198955",
+      "name": "MIDDLE RIVER AT FISH HOLE AT PORT WENTWORTH, GA",
+      "state": "Georgia",
+      "site_type": "Tidal stream",
+      "latitude": 32.1427777777778,
+      "longitude": -81.1352777777778,
+      "drainage_area_sqmi": null,
+      "huc": "03060109"
+    },
+    {
+      "station_id": "USGS-021989715",
+      "name": "SAVANNAH RIVER AT GARDEN CITY, GA",
+      "state": "Georgia",
+      "site_type": "Tidal stream",
+      "latitude": 32.1160833333333,
+      "longitude": -81.1283333333333,
+      "drainage_area_sqmi": null,
+      "huc": "03060109"
+    },
+    {
+      "station_id": "USGS-021989773",
+      "name": "SAVANNAH RIVER AT USACE DOCK, AT SAVANNAH, GA",
+      "state": "Georgia",
+      "site_type": "Tidal stream",
+      "latitude": 32.0804166666667,
+      "longitude": -81.0813611111111,
+      "drainage_area_sqmi": null,
+      "huc": "03060109"
+    },
+    {
+      "station_id": "USGS-021989792",
+      "name": "LITTLE BACK RIVER AT GA 25 AT PORT WENTWORTH, GA",
+      "state": "Georgia",
+      "site_type": "Tidal stream",
+      "latitude": 32.1658333333333,
+      "longitude": -81.13,
+      "drainage_area_sqmi": null,
+      "huc": "03060109"
+    },
+    {
+      "station_id": "USGS-021989793",
+      "name": "LITTLE BACK RIVER AT HOG ISLAND, NEAR SAVANNAH, GA",
+      "state": "Georgia",
+      "site_type": "Tidal stream",
+      "latitude": 32.1366666666667,
+      "longitude": -81.1219444444444,
+      "drainage_area_sqmi": null,
+      "huc": "03060109"
+    },
+    {
+      "station_id": "USGS-0219897945",
+      "name": "BACK RIVER 0.4 MI DOWNSTREAM US17, NR SAVANNAH, GA",
+      "state": "Georgia",
+      "site_type": "Tidal stream",
+      "latitude": 32.0977777777778,
+      "longitude": -81.0827777777778,
+      "drainage_area_sqmi": null,
+      "huc": "03060109"
+    },
+    {
+      "station_id": "USGS-0219897993",
+      "name": "SAVANNAH RIVER AT ELBA ISLAND, NEAR SAVANNAH, GA",
+      "state": "South Carolina",
+      "site_type": "Tidal stream",
+      "latitude": 32.1030555555556,
+      "longitude": -81.0069444444444,
+      "drainage_area_sqmi": null,
+      "huc": "03060109"
+    },
+    {
+      "station_id": "USGS-02203603",
+      "name": "SOUTH RIVER AT SPRINGDALE ROAD, AT ATLANTA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.6838888888889,
+      "longitude": -84.4152777777778,
+      "drainage_area_sqmi": 2.42,
+      "huc": "03070103"
+    },
+    {
+      "station_id": "USGS-02203655",
+      "name": "SOUTH RIVER AT FORREST PARK ROAD, AT ATLANTA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.6789166666667,
+      "longitude": -84.3581388888889,
+      "drainage_area_sqmi": 22.5,
+      "huc": "03070103"
+    },
+    {
+      "station_id": "USGS-02203831",
+      "name": "DOOLITTLE CREEK AT FLAT SHOALS RD, NR DECATUR, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.7056944444444,
+      "longitude": -84.2921944444444,
+      "drainage_area_sqmi": 4.16,
+      "huc": "03070103"
+    },
+    {
+      "station_id": "USGS-02203863",
+      "name": "SHOAL CREEK AT COLUMBIA DRIVE NEAR ATLANTA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.6931944444444,
+      "longitude": -84.2538888888889,
+      "drainage_area_sqmi": 8.63,
+      "huc": "03070103"
+    },
+    {
+      "station_id": "USGS-02203873",
+      "name": "COBBS CREEK AT RAINBOW DR, NEAR DECATUR, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.7094166666667,
+      "longitude": -84.2391666666667,
+      "drainage_area_sqmi": 7.97,
+      "huc": "03070103"
+    },
+    {
+      "station_id": "USGS-02203900",
+      "name": "SOUTH RIVER AT FLAKES MILL ROAD NR ATLANTA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.6657777777778,
+      "longitude": -84.224,
+      "drainage_area_sqmi": 99.0,
+      "huc": "03070103"
+    },
+    {
+      "station_id": "USGS-02203950",
+      "name": "SNAPFINGER CREEK NEAR DECATUR, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.7632222222222,
+      "longitude": -84.2203611111111,
+      "drainage_area_sqmi": 13.2,
+      "huc": "03070103"
+    },
+    {
+      "station_id": "USGS-02203960",
+      "name": "SNAPFINGER CR AT THOMPSON MILL RD NR LITHONIA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.6966666666667,
+      "longitude": -84.1986111111111,
+      "drainage_area_sqmi": 32.6,
+      "huc": "03070103"
+    },
+    {
+      "station_id": "USGS-02204037",
+      "name": "POLE BRIDGE CR AT EVANS MILL RD NEAR LITHONIA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.6681944444444,
+      "longitude": -84.1511666666667,
+      "drainage_area_sqmi": 16.1,
+      "huc": "03070103"
+    },
+    {
+      "station_id": "USGS-02207135",
+      "name": "LITTLE STONE MTN CR NEAR STONE MOUNTAIN, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.8304166666667,
+      "longitude": -84.1393333333333,
+      "drainage_area_sqmi": 2.2,
+      "huc": "03070103"
+    },
+    {
+      "station_id": "USGS-02207160",
+      "name": "STONE MOUNTAIN CREEK AT GA 124, NEAR LITHONIA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.7732777777778,
+      "longitude": -84.0771666666667,
+      "drainage_area_sqmi": 28.4,
+      "huc": "03070103"
+    },
+    {
+      "station_id": "USGS-02208450",
+      "name": "ALCOVY RIVER ABOVE COVINGTON, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.6393888888889,
+      "longitude": -83.7784166666667,
+      "drainage_area_sqmi": 186.0,
+      "huc": "03070103"
+    },
+    {
+      "station_id": "USGS-02208493",
+      "name": "CORNISH CREEK AT HAZELBRAND RD NR COVINGTON, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.6285,
+      "longitude": -83.7988611111111,
+      "drainage_area_sqmi": 27.2,
+      "huc": "03070103"
+    },
+    {
+      "station_id": "USGS-02217643",
+      "name": "PARKS CREEK AT LYLE FIELD RD NR JEFFERSON, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 34.1620583333333,
+      "longitude": -83.5250944444444,
+      "drainage_area_sqmi": 3.05,
+      "huc": "03070101"
+    },
+    {
+      "station_id": "USGS-02301500",
+      "name": "ALAFIA RIVER AT LITHIA PINECREST RD AT LITHIA, FL",
+      "state": "Florida",
+      "site_type": "Stream",
+      "latitude": 27.872248001503,
+      "longitude": -82.2112007683802,
+      "drainage_area_sqmi": 335.0,
+      "huc": "031002040304"
+    },
+    {
+      "station_id": "USGS-02318500",
+      "name": "WITHLACOOCHEE RIVER AT US 84, NEAR QUITMAN, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 30.7933055555556,
+      "longitude": -83.4534444444444,
+      "drainage_area_sqmi": 1480.0,
+      "huc": "03110203"
+    },
+    {
+      "station_id": "USGS-02336120",
+      "name": "N.F. PEACHTREE CREEK, BUFORD HWY, NEAR ATLANTA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.8315555555556,
+      "longitude": -84.3427777777778,
+      "drainage_area_sqmi": 34.8,
+      "huc": "03130001"
+    },
+    {
+      "station_id": "USGS-02336152",
+      "name": "SOUTH FORK PEACHTREE AT CASA DR, NR CLARKSTON, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.8104444444444,
+      "longitude": -84.2479722222222,
+      "drainage_area_sqmi": 5.62,
+      "huc": "03130001"
+    },
+    {
+      "station_id": "USGS-023362095",
+      "name": "BURNT FORK CR AT MILLWOOD WAY NEAR CLARKSTON, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.8213888888889,
+      "longitude": -84.2747222222222,
+      "drainage_area_sqmi": 3.26,
+      "huc": "03130001"
+    },
+    {
+      "station_id": "USGS-02336240",
+      "name": "S.F. PEACHTREE CREEK JOHNSON RD, NEAR ATLANTA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.8030833333333,
+      "longitude": -84.3406944444444,
+      "drainage_area_sqmi": 27.6,
+      "huc": "03130001"
+    },
+    {
+      "station_id": "USGS-02336300",
+      "name": "PEACHTREE CREEK AT ATLANTA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.8203055555556,
+      "longitude": -84.4076388888889,
+      "drainage_area_sqmi": 86.8,
+      "huc": "03130001"
+    },
+    {
+      "station_id": "USGS-02336313",
+      "name": "WOODALL CREEK AT DEFOORS FERRY RD, AT ATLANTA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.8216388888889,
+      "longitude": -84.4386388888889,
+      "drainage_area_sqmi": 2.71,
+      "huc": "03130001"
+    },
+    {
+      "station_id": "USGS-02336340",
+      "name": "NANCY CREEK AT JOHNSON FERRY RD, AT CHAMBLEE, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.89775,
+      "longitude": -84.34525,
+      "drainage_area_sqmi": 17.8,
+      "huc": "03130001"
+    },
+    {
+      "station_id": "USGS-02336360",
+      "name": "NANCY CREEK AT RICKENBACKER DRIVE, AT ATLANTA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.8691666666667,
+      "longitude": -84.3788888888889,
+      "drainage_area_sqmi": 26.6,
+      "huc": "03130001"
+    },
+    {
+      "station_id": "USGS-02336410",
+      "name": "NANCY CREEK AT WEST WESLEY ROAD, AT ATLANTA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.8382222222222,
+      "longitude": -84.4392777777778,
+      "drainage_area_sqmi": 37.7,
+      "huc": "03130001"
+    },
+    {
+      "station_id": "USGS-02336526",
+      "name": "PROCTOR CREEK AT JACKSON PARKWAY, AT ATLANTA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.7944722222222,
+      "longitude": -84.4741944444444,
+      "drainage_area_sqmi": 13.4,
+      "huc": "03130002"
+    },
+    {
+      "station_id": "USGS-02336728",
+      "name": "UTOY CREEK AT GREAT SOUTHWEST PKWY NR ATLANTA, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.7435277777778,
+      "longitude": -84.5681666666667,
+      "drainage_area_sqmi": 33.9,
+      "huc": "03130002"
+    },
+    {
+      "station_id": "USGS-02344630",
+      "name": "LINE CREEK BLW LAKE MCINTOSH, NR PEACHTREE CITY,GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.3572777777778,
+      "longitude": -84.5826111111111,
+      "drainage_area_sqmi": 69.4,
+      "huc": "03130005"
+    },
+    {
+      "station_id": "USGS-02344673",
+      "name": "FLAT CREEK DS OF LAKE AT PEACHTREE CITY, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 33.3831666666667,
+      "longitude": -84.5727222222222,
+      "drainage_area_sqmi": 18.4,
+      "huc": "03130005"
+    },
+    {
+      "station_id": "USGS-02388985",
+      "name": "RUSSELL CRK 0.3 MI DS HEAD LAKE NR DAWSONVILLE, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 34.3986111111111,
+      "longitude": -84.0566666666667,
+      "drainage_area_sqmi": 3.02,
+      "huc": "03150104"
+    },
+    {
+      "station_id": "USGS-02394682",
+      "name": "RICHLAND CREEK AT OLD DALLAS RD, NEAR DALLAS, GA",
+      "state": "Georgia",
+      "site_type": "Stream",
+      "latitude": 34.0789722222222,
+      "longitude": -84.8544444444444,
+      "drainage_area_sqmi": 2.54,
+      "huc": "03150104"
+    },
+    {
+      "station_id": "USGS-02423160",
+      "name": "CAHABA RIVER NEAR WHITES CHAPEL AL",
+      "state": "Alabama",
+      "site_type": "Stream",
+      "latitude": 33.6037141610921,
+      "longitude": -86.5491517317862,
+      "drainage_area_sqmi": 50.8,
+      "huc": "031502020101"
+    },
+    {
+      "station_id": "USGS-0242354650",
+      "name": "CAHABA VALLEY CR AT INDIAN TRAIL RD NR INDIAN SPRS",
+      "state": "Alabama",
+      "site_type": "Stream",
+      "latitude": 33.3449441224161,
+      "longitude": -86.7594182810839,
+      "drainage_area_sqmi": 14.3,
+      "huc": "031502020202"
+    },
+    {
+      "station_id": "USGS-02423571",
+      "name": "SHADES CREEK AT ELDER ST NEAR SPRINGDALE AL",
+      "state": "Alabama",
+      "site_type": "Stream",
+      "latitude": 33.52098133675065,
+      "longitude": -86.71693178416554,
+      "drainage_area_sqmi": 9.46,
+      "huc": "031502020301"
+    },
+    {
+      "station_id": "USGS-03179000",
+      "name": "BLUESTONE RIVER NEAR PIPESTEM, WV",
+      "state": "West Virginia",
+      "site_type": "Stream",
+      "latitude": 37.5440077857544,
+      "longitude": -81.0103678185996,
+      "drainage_area_sqmi": 395.0,
+      "huc": "050500020908"
+    },
+    {
+      "station_id": "USGS-03185400",
+      "name": "NEW RIVER AT THURMOND, WV",
+      "state": "West Virginia",
+      "site_type": "Stream",
+      "latitude": 37.9551128497596,
+      "longitude": -81.076488382022,
+      "drainage_area_sqmi": 6752.0,
+      "huc": "050500040303"
+    },
+    {
+      "station_id": "USGS-03191982",
+      "name": "GAULEY RIVER BELOW RICH CREEK AT JODIE, WV",
+      "state": "West Virginia",
+      "site_type": "Stream",
+      "latitude": 38.226761,
+      "longitude": -81.153156,
+      "drainage_area_sqmi": 1314.0,
+      "huc": "050500050809"
+    },
+    {
+      "station_id": "USGS-03216070",
+      "name": "OHIO RIVER AT IRONTON, OH",
+      "state": "Ohio",
+      "site_type": "Stream",
+      "latitude": 38.53205555555555,
+      "longitude": -82.68594444444444,
+      "drainage_area_sqmi": 60825.0,
+      "huc": "05090103"
+    },
+    {
+      "station_id": "USGS-03228039",
+      "name": "Scioto River above Shadeville OH",
+      "state": "Ohio",
+      "site_type": "Stream",
+      "latitude": 39.8397222222222,
+      "longitude": -83.0094444444444,
+      "drainage_area_sqmi": 1696.0,
+      "huc": "050600012303"
+    },
+    {
+      "station_id": "USGS-03254520",
+      "name": "LICKING RIVER AT HWY 536 NEAR ALEXANDRIA, KY",
+      "state": "Kentucky",
+      "site_type": "Stream",
+      "latitude": 38.920341703603,
+      "longitude": -84.4479954924722,
+      "drainage_area_sqmi": 3593.0,
+      "huc": "05100101"
+    },
+    {
+      "station_id": "USGS-03275500",
+      "name": "EAST FORK WHITEWATER RIVER AT RICHMOND, IN",
+      "state": "Indiana",
+      "site_type": "Stream",
+      "latitude": 39.806701024807936,
+      "longitude": -84.90714941694777,
+      "drainage_area_sqmi": 121.0,
+      "huc": "05080003"
+    },
+    {
+      "station_id": "USGS-03290500",
+      "name": "KENTUCKY RIVER AT LOCK 2 AT LOCKPORT, KY",
+      "state": "Kentucky",
+      "site_type": "Stream",
+      "latitude": 38.43894162497998,
+      "longitude": -84.96326371817682,
+      "drainage_area_sqmi": 6180.0,
+      "huc": "05100205"
+    },
+    {
+      "station_id": "USGS-03321500",
+      "name": "GREEN RIVER AT LOCK 1 AT SPOTTSVILLE, KY",
+      "state": "Kentucky",
+      "site_type": "Stream",
+      "latitude": 37.8583774332636,
+      "longitude": -87.4097293534442,
+      "drainage_area_sqmi": 9181.0,
+      "huc": "05110005"
+    },
+    {
+      "station_id": "USGS-03353415",
+      "name": "SCHOOL BRANCH AT MALONEY ROAD NEAR BROWNSBURG, IN",
+      "state": "Indiana",
+      "site_type": "Stream",
+      "latitude": 39.885777777777776,
+      "longitude": -86.35544444444444,
+      "drainage_area_sqmi": 3.39,
+      "huc": "05120201"
+    },
+    {
+      "station_id": "USGS-03374100",
+      "name": "WHITE RIVER AT HAZLETON, IN",
+      "state": "Indiana",
+      "site_type": "Stream",
+      "latitude": 38.48977483645765,
+      "longitude": -87.55001321665438,
+      "drainage_area_sqmi": 11305.0,
+      "huc": "05120202"
+    },
+    {
+      "station_id": "USGS-03378500",
+      "name": "WABASH RIVER AT NEW HARMONY, IN",
+      "state": "Indiana",
+      "site_type": "Stream",
+      "latitude": 38.13089124398878,
+      "longitude": -87.94141452141561,
+      "drainage_area_sqmi": 29234.0,
+      "huc": "05120113"
+    },
+    {
+      "station_id": "USGS-03431083",
+      "name": "MILL CREEK AT LEBANON ROAD AT NASHVILLE, TN",
+      "state": "Tennessee",
+      "site_type": "Stream",
+      "latitude": 36.1639454533757,
+      "longitude": -86.6991639761715,
+      "drainage_area_sqmi": 107.0,
+      "huc": "051302020102"
+    },
+    {
+      "station_id": "USGS-03447687",
+      "name": "FRENCH BROAD RIVER NEAR FLETCHER, NC",
+      "state": "North Carolina",
+      "site_type": "Stream",
+      "latitude": 35.4291666666667,
+      "longitude": -82.5525,
+      "drainage_area_sqmi": 640.0,
+      "huc": "06010105"
+    },
+    {
+      "station_id": "USGS-0344878100",
+      "name": "HOMINY CREEK NR WEST ASHEVILLE, NC",
+      "state": "North Carolina",
+      "site_type": "Stream",
+      "latitude": 35.5613888888889,
+      "longitude": -82.5969444444444,
+      "drainage_area_sqmi": 104.0,
+      "huc": "06010105"
+    },
+    {
+      "station_id": "USGS-03451200",
+      "name": "FRENCH BROAD RIVER AT HAYWOOD RD AT ASHEVILLE, NC",
+      "state": "North Carolina",
+      "site_type": "Stream",
+      "latitude": 35.585,
+      "longitude": -82.5686111111111,
+      "drainage_area_sqmi": 936.0,
+      "huc": "060101050901"
+    },
+    {
+      "station_id": "USGS-03451500",
+      "name": "FRENCH BROAD RIVER AT ASHEVILLE, NC",
+      "state": "North Carolina",
+      "site_type": "Stream",
+      "latitude": 35.6088888888889,
+      "longitude": -82.5780555555556,
+      "drainage_area_sqmi": 945.0,
+      "huc": "06010105"
+    },
+    {
+      "station_id": "USGS-03512000",
+      "name": "OCONALUFTEE RIVER AT BIRDTOWN, NC",
+      "state": "North Carolina",
+      "site_type": "Stream",
+      "latitude": 35.4613888888889,
+      "longitude": -83.3536111111111,
+      "drainage_area_sqmi": 184.0,
+      "huc": "06010203"
+    },
+    {
+      "station_id": "USGS-03612600",
+      "name": "OHIO RIVER AT OLMSTED, IL",
+      "state": "Illinois",
+      "site_type": "Stream",
+      "latitude": 37.1792186733202,
+      "longitude": -89.0584040037475,
+      "drainage_area_sqmi": 203000.0,
+      "huc": "05140206"
+    },
+    {
+      "station_id": "USGS-04024000",
+      "name": "ST. LOUIS RIVER AT SCANLON, MN",
+      "state": "Minnesota",
+      "site_type": "Stream",
+      "latitude": 46.703511,
+      "longitude": -92.418378,
+      "drainage_area_sqmi": 3430.0,
+      "huc": "040102011503"
+    },
+    {
+      "station_id": "USGS-04027000",
+      "name": "BAD RIVER NEAR ODANAH, WI",
+      "state": "Wisconsin",
+      "site_type": "Stream",
+      "latitude": 46.486614419551,
+      "longitude": -90.6962969626642,
+      "drainage_area_sqmi": 597.0,
+      "huc": "040103020702"
+    },
+    {
+      "station_id": "USGS-040851385",
+      "name": "FOX RIVER AT OIL TANK DEPOT AT GREEN BAY, WI",
+      "state": "Wisconsin",
+      "site_type": "Stream",
+      "latitude": 44.5286111111111,
+      "longitude": -88.01,
+      "drainage_area_sqmi": 6330.0,
+      "huc": "040302040405"
+    },
+    {
+      "station_id": "USGS-04087234",
+      "name": "ROOT RIVER AT 60TH ST NEAR CALEDONIA, WI",
+      "state": "Wisconsin",
+      "site_type": "Stream",
+      "latitude": 42.8555555555556,
+      "longitude": -87.9907222222222,
+      "drainage_area_sqmi": 127.0,
+      "huc": "040400020303"
+    },
+    {
+      "station_id": "USGS-04183038",
+      "name": "BLACK CREEK NEAR HARLAN, IN",
+      "state": "Indiana",
+      "site_type": "Stream",
+      "latitude": 41.18308333333333,
+      "longitude": -84.86969444444443,
+      "drainage_area_sqmi": 12.36,
+      "huc": "04100005"
+    },
+    {
+      "station_id": "USGS-04183500",
+      "name": "Maumee River at Antwerp OH",
+      "state": "Ohio",
+      "site_type": "Stream",
+      "latitude": 41.1989388909615,
+      "longitude": -84.744403330916,
+      "drainage_area_sqmi": 2129.0,
+      "huc": "041000050202"
+    },
+    {
+      "station_id": "USGS-04193500",
+      "name": "Maumee River at Waterville OH",
+      "state": "Ohio",
+      "site_type": "Stream",
+      "latitude": 41.5000526040668,
+      "longitude": -83.7127144549445,
+      "drainage_area_sqmi": 6330.0,
+      "huc": "041000090903"
+    },
+    {
+      "station_id": "USGS-04213152",
+      "name": "Walnut Creek Upstream Pool, near Erie, PA",
+      "state": "Pennsylvania",
+      "site_type": "Stream",
+      "latitude": 42.073888888888895,
+      "longitude": -80.23472222222222,
+      "drainage_area_sqmi": 37.3,
+      "huc": "041201010407"
+    },
+    {
+      "station_id": "USGS-04213500",
+      "name": "CATTARAUGUS CREEK AT GOWANDA NY",
+      "state": "New York",
+      "site_type": "Stream",
+      "latitude": 42.4634444444444,
+      "longitude": -78.9345277777778,
+      "drainage_area_sqmi": 436.0,
+      "huc": "041201020209"
+    },
+    {
+      "station_id": "USGS-04231600",
+      "name": "GENESEE RIVER AT FORD STREET BRIDGE, ROCHESTER NY",
+      "state": "New York",
+      "site_type": "Stream",
+      "latitude": 43.1417222222222,
+      "longitude": -77.6163055555556,
+      "drainage_area_sqmi": 2474.0,
+      "huc": "041300030704"
+    },
+    {
+      "station_id": "USGS-05051522",
+      "name": "RED RIVER OF THE NORTH AT HICKSON, ND",
+      "state": "North Dakota",
+      "site_type": "Stream",
+      "latitude": 46.659522,
+      "longitude": -96.796408,
+      "drainage_area_sqmi": 4190.9,
+      "huc": "090201040403"
+    },
+    {
+      "station_id": "USGS-05054000",
+      "name": "RED RIVER OF THE NORTH AT FARGO, ND",
+      "state": "North Dakota",
+      "site_type": "Stream",
+      "latitude": 46.861111,
+      "longitude": -96.783333,
+      "drainage_area_sqmi": 6800.0,
+      "huc": "090201040504"
+    },
+    {
+      "station_id": "USGS-05062130",
+      "name": "RED RIVER OF THE NORTH NEAR GEORGETOWN, MN",
+      "state": "North Dakota",
+      "site_type": "Stream",
+      "latitude": 47.092756,
+      "longitude": -96.818,
+      "drainage_area_sqmi": 15163.0,
+      "huc": "090201070101"
+    },
+    {
+      "station_id": "USGS-05082500",
+      "name": "RED RIVER OF THE NORTH AT GRAND FORKS, ND",
+      "state": "North Dakota",
+      "site_type": "Stream",
+      "latitude": 47.926944,
+      "longitude": -97.028889,
+      "drainage_area_sqmi": 30100.0,
+      "huc": "090203010705"
+    },
+    {
+      "station_id": "USGS-05420400",
+      "name": "MISSISSIPPI RIVER AT DAM 13 NEAR FULTON, IL",
+      "state": "Illinois",
+      "site_type": "Stream",
+      "latitude": 41.8944725373443,
+      "longitude": -90.1567930273846,
+      "drainage_area_sqmi": 85600.0,
+      "huc": "070801010204"
+    },
+    {
+      "station_id": "USGS-05464420",
+      "name": "Cedar River at Blairs Ferry Road at Palo, IA",
+      "state": "Iowa",
+      "site_type": "Stream",
+      "latitude": 42.0691638888889,
+      "longitude": -91.7851805555556,
+      "drainage_area_sqmi": 6342.0,
+      "huc": "070802051507"
+    },
+    {
+      "station_id": "USGS-05474500",
+      "name": "Mississippi River at Keokuk, IA",
+      "state": "Iowa",
+      "site_type": "Stream",
+      "latitude": 40.3936553481252,
+      "longitude": -91.3743179848803,
+      "drainage_area_sqmi": 119000.0,
+      "huc": "070801041806"
+    },
+    {
+      "station_id": "USGS-05537980",
+      "name": "DES PLAINES RIVER AT ROUTE 53 AT JOLIET, IL",
+      "state": "Illinois",
+      "site_type": "Stream",
+      "latitude": 41.5364722222222,
+      "longitude": -88.0836944444444,
+      "drainage_area_sqmi": 1502.0,
+      "huc": "071200040706"
+    },
+    {
+      "station_id": "USGS-05545750",
+      "name": "FOX RIVER NEAR NEW MUNSTER, WI",
+      "state": "Wisconsin",
+      "site_type": "Stream",
+      "latitude": 42.6108511625045,
+      "longitude": -88.2259230488227,
+      "drainage_area_sqmi": 811.0,
+      "huc": "071200061003"
+    },
+    {
+      "station_id": "USGS-05549500",
+      "name": "FOX RIVER NEAR MCHENRY, IL",
+      "state": "Illinois",
+      "site_type": "Stream",
+      "latitude": 42.3100222225937,
+      "longitude": -88.251474520618,
+      "drainage_area_sqmi": 1250.0,
+      "huc": "071200061102"
+    },
+    {
+      "station_id": "USGS-05558300",
+      "name": "ILLINOIS RIVER AT HENRY, IL",
+      "state": "Illinois",
+      "site_type": "Stream",
+      "latitude": 41.1072777777778,
+      "longitude": -89.3562222222222,
+      "drainage_area_sqmi": 13544.0,
+      "huc": "071300011301"
+    },
+    {
+      "station_id": "USGS-05568705",
+      "name": "MASON TAZEWELL DRAINAGE D AT CR2350E NR TOPEKA, IL",
+      "state": "Illinois",
+      "site_type": "Stream",
+      "latitude": 40.32658333333334,
+      "longitude": -89.91411111111111,
+      "drainage_area_sqmi": 171.9,
+      "huc": "071300030507"
+    },
+    {
+      "station_id": "USGS-05576195",
+      "name": "SUGAR CREEK NEAR CHATHAM, IL",
+      "state": "Illinois",
+      "site_type": "Stream",
+      "latitude": 39.659075,
+      "longitude": -89.6589361111111,
+      "drainage_area_sqmi": 90.43,
+      "huc": "071300070703"
+    },
+    {
+      "station_id": "USGS-05586300",
+      "name": "ILLINOIS RIVER AT FLORENCE, IL",
+      "state": "Illinois",
+      "site_type": "Stream",
+      "latitude": 39.63275,
+      "longitude": -90.6076666666667,
+      "drainage_area_sqmi": 26870.0,
+      "huc": "071300110805"
+    },
+    {
+      "station_id": "USGS-05599490",
+      "name": "BIG MUDDY RIVER AT RTE 127 AT MURPHYSBORO, IL",
+      "state": "Illinois",
+      "site_type": "Stream",
+      "latitude": 37.7583333333333,
+      "longitude": -89.3277777777778,
+      "drainage_area_sqmi": 2159.0,
+      "huc": "071401061201"
+    },
+    {
+      "station_id": "USGS-06707525",
+      "name": "SOUTH PLATTE RIVER ABV STRONTIA SPGS RESERVOIR, CO",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 39.41641666666666,
+      "longitude": -105.15105555555556,
+      "drainage_area_sqmi": null,
+      "huc": "101900020701"
+    },
+    {
+      "station_id": "USGS-06729470",
+      "name": "SOUTH BOULDER CR AT FOREBAY NR ELDORADO SPRINGS CO",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 39.93244444444444,
+      "longitude": -105.30866666666667,
+      "drainage_area_sqmi": null,
+      "huc": "101900050503"
+    },
+    {
+      "station_id": "USGS-06856600",
+      "name": "REPUBLICAN R AT CLAY CENTER, KS",
+      "state": "Kansas",
+      "site_type": "Stream",
+      "latitude": 39.355551524459,
+      "longitude": -97.1275203475239,
+      "drainage_area_sqmi": 24542.0,
+      "huc": "10250017"
+    },
+    {
+      "station_id": "USGS-06888990",
+      "name": "KANSAS R AB TOPEKA WEIR AT TOPEKA, KS",
+      "state": "Kansas",
+      "site_type": "Stream",
+      "latitude": 39.0719443546706,
+      "longitude": -95.7163714682093,
+      "drainage_area_sqmi": 56686.0,
+      "huc": "10270102"
+    },
+    {
+      "station_id": "USGS-06889110",
+      "name": "SOLDIER CREEK NR CORNING, KS",
+      "state": "Kansas",
+      "site_type": "Stream",
+      "latitude": 39.609547222222226,
+      "longitude": -95.97605555555556,
+      "drainage_area_sqmi": 9.27,
+      "huc": "102701020801"
+    },
+    {
+      "station_id": "USGS-06892518",
+      "name": "KANSAS R NR LAKE QUIVIRA, KS",
+      "state": "Kansas",
+      "site_type": "Stream",
+      "latitude": 39.0461111111111,
+      "longitude": -94.7894444444444,
+      "drainage_area_sqmi": 59985.0,
+      "huc": "10270104"
+    },
+    {
+      "station_id": "USGS-06893100",
+      "name": "BLUE R AT KENNETH RD, OVERLAND PARK, KS",
+      "state": "Kansas",
+      "site_type": "Stream",
+      "latitude": 38.8422222222222,
+      "longitude": -94.6122222222222,
+      "drainage_area_sqmi": 65.8,
+      "huc": "10300101"
+    },
+    {
+      "station_id": "USGS-06934500",
+      "name": "Missouri River at Hermann, MO",
+      "state": "Missouri",
+      "site_type": "Stream",
+      "latitude": 38.7098055555556,
+      "longitude": -91.4385,
+      "drainage_area_sqmi": 522500.0,
+      "huc": "103002000301"
+    },
+    {
+      "station_id": "USGS-07020850",
+      "name": "Mississippi River at Cape Girardeau, MO",
+      "state": "Missouri",
+      "site_type": "Stream",
+      "latitude": 37.3018888888889,
+      "longitude": -89.518,
+      "drainage_area_sqmi": null,
+      "huc": "071401050503"
+    },
+    {
+      "station_id": "USGS-07048600",
+      "name": "White River near Fayetteville, AR",
+      "state": "Arkansas",
+      "site_type": "Stream",
+      "latitude": 36.073055555555555,
+      "longitude": -94.08111111111111,
+      "drainage_area_sqmi": 400.0,
+      "huc": "110100010701"
+    },
+    {
+      "station_id": "USGS-07049000",
+      "name": "War Eagle Creek near Hindsville, AR",
+      "state": "Arkansas",
+      "site_type": "Stream",
+      "latitude": 36.2,
+      "longitude": -93.855,
+      "drainage_area_sqmi": 263.0,
+      "huc": "110100010609"
+    },
+    {
+      "station_id": "USGS-07061270",
+      "name": "East Fork Black River near Lesterville, MO",
+      "state": "Missouri",
+      "site_type": "Stream",
+      "latitude": 37.5525555555555,
+      "longitude": -90.8424444444444,
+      "drainage_area_sqmi": 52.2,
+      "huc": "110100070202"
+    },
+    {
+      "station_id": "USGS-07061290",
+      "name": "E. Fk. Black R. bl Lower Taum Sauk Reservoir",
+      "state": "Missouri",
+      "site_type": "Stream",
+      "latitude": 37.4936111111111,
+      "longitude": -90.8383333333333,
+      "drainage_area_sqmi": 87.3,
+      "huc": "110100070202"
+    },
+    {
+      "station_id": "USGS-07075270",
+      "name": "South Fork of Little Red River near Scotland, AR",
+      "state": "Arkansas",
+      "site_type": "Stream",
+      "latitude": 35.569722222222225,
+      "longitude": -92.62194444444444,
+      "drainage_area_sqmi": 74.7,
+      "huc": "110100140203"
+    },
+    {
+      "station_id": "USGS-07263296",
+      "name": "Maumelle River near Wye, AR",
+      "state": "Arkansas",
+      "site_type": "Stream",
+      "latitude": 34.87888888888889,
+      "longitude": -92.68555555555555,
+      "drainage_area_sqmi": 73.0,
+      "huc": "111102070102"
+    },
+    {
+      "station_id": "USGS-072632966",
+      "name": "Lake Maumelle at State Hwy 10 near Wye, AR",
+      "state": "Arkansas",
+      "site_type": "Stream",
+      "latitude": 34.875277777777775,
+      "longitude": -92.6538888888889,
+      "drainage_area_sqmi": 89.4,
+      "huc": "111102070106"
+    },
+    {
+      "station_id": "USGS-072632996",
+      "name": "Lk Maumelle Raw Water Intake nr Natural Steps,AR",
+      "state": "Arkansas",
+      "site_type": "Lake, Reservoir, Impoundment",
+      "latitude": 34.8519444444444,
+      "longitude": -92.4891666666667,
+      "drainage_area_sqmi": null,
+      "huc": "111102070106"
+    },
+    {
+      "station_id": "USGS-07288048",
+      "name": "RICHIES BAYOU AT SHERARD, MS",
+      "state": "Mississippi",
+      "site_type": "Stream",
+      "latitude": 34.2092222222222,
+      "longitude": -90.7001944444444,
+      "drainage_area_sqmi": null,
+      "huc": "080302070302"
+    },
+    {
+      "station_id": "USGS-07288068",
+      "name": "HARRIS BAYOU AT PALMER RD EAST OF ALLIGATOR, MS",
+      "state": "Mississippi",
+      "site_type": "Stream",
+      "latitude": 34.07475,
+      "longitude": -90.6249444444444,
+      "drainage_area_sqmi": null,
+      "huc": "080302070302"
+    },
+    {
+      "station_id": "USGS-07288500",
+      "name": "BIG SUNFLOWER RIVER AT SUNFLOWER, MS",
+      "state": "Mississippi",
+      "site_type": "Stream",
+      "latitude": 33.54735571674962,
+      "longitude": -90.54315791906323,
+      "drainage_area_sqmi": 767.0,
+      "huc": "080302070506"
+    },
+    {
+      "station_id": "USGS-07288521",
+      "name": "PORTER BAYOU AT STEPHENSVILLE, MS",
+      "state": "Mississippi",
+      "site_type": "Stream",
+      "latitude": 33.54825,
+      "longitude": -90.6723611111111,
+      "drainage_area_sqmi": null,
+      "huc": "080302070504"
+    },
+    {
+      "station_id": "USGS-073625897",
+      "name": "Lake Winona Raw Water Intake Pipe near Reform, AR",
+      "state": "Arkansas",
+      "site_type": "Lake, Reservoir, Impoundment",
+      "latitude": 34.7958333333333,
+      "longitude": -92.8416666666667,
+      "drainage_area_sqmi": null,
+      "huc": "080402030302"
+    },
+    {
+      "station_id": "USGS-07374000",
+      "name": "Mississippi River at Baton Rouge, LA",
+      "state": "Louisiana",
+      "site_type": "Stream",
+      "latitude": 30.4456666666667,
+      "longitude": -91.1915555555556,
+      "drainage_area_sqmi": 1125810.0,
+      "huc": "080701000104"
+    },
+    {
+      "station_id": "USGS-07380249",
+      "name": "Caminada Pass NW of Grand Isle, LA",
+      "state": "Louisiana",
+      "site_type": "Estuary",
+      "latitude": 29.2313611111111,
+      "longitude": -90.0485277777778,
+      "drainage_area_sqmi": null,
+      "huc": "080903010507"
+    },
+    {
+      "station_id": "USGS-073802512",
+      "name": "Hackberry Bay NW of Grand Isle, LA",
+      "state": "Louisiana",
+      "site_type": "Estuary",
+      "latitude": 29.398580280129266,
+      "longitude": -90.04119470791454,
+      "drainage_area_sqmi": null,
+      "huc": "080903010501"
+    },
+    {
+      "station_id": "USGS-07380330",
+      "name": "Bayou Perot at Point Legard near Cutoff, LA",
+      "state": "Louisiana",
+      "site_type": "Estuary",
+      "latitude": 29.56577777777778,
+      "longitude": -90.16555555555556,
+      "drainage_area_sqmi": null,
+      "huc": "080903010401"
+    },
+    {
+      "station_id": "USGS-07381600",
+      "name": "Lower Atchafalaya River at Morgan City, LA",
+      "state": "Louisiana",
+      "site_type": "Stream",
+      "latitude": 29.69284820804636,
+      "longitude": -91.21195072040246,
+      "drainage_area_sqmi": null,
+      "huc": "080801010506"
+    },
+    {
+      "station_id": "USGS-08048000",
+      "name": "W Fk Trinity Rv at Ft Worth, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 32.7609633716878,
+      "longitude": -97.3325166728878,
+      "drainage_area_sqmi": 2615.0,
+      "huc": "120301020501"
+    },
+    {
+      "station_id": "USGS-08049500",
+      "name": "W Fk Trinity Rv at Grand Prairie, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 32.7625,
+      "longitude": -96.9944444444444,
+      "drainage_area_sqmi": 3065.0,
+      "huc": "120301020706"
+    },
+    {
+      "station_id": "USGS-08057000",
+      "name": "Trinity Rv at Dallas, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 32.7748517183903,
+      "longitude": -96.8219463868768,
+      "drainage_area_sqmi": 6106.0,
+      "huc": "120301050102"
+    },
+    {
+      "station_id": "USGS-08057410",
+      "name": "Trinity Rv bl Dallas, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 32.7076313882615,
+      "longitude": -96.735831865053,
+      "drainage_area_sqmi": 6278.0,
+      "huc": "120301050108"
+    },
+    {
+      "station_id": "USGS-08062500",
+      "name": "Trinity Rv nr Rosser, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 32.4265298827489,
+      "longitude": -96.4630415213096,
+      "drainage_area_sqmi": 8147.0,
+      "huc": "120301050403"
+    },
+    {
+      "station_id": "USGS-08066850",
+      "name": "Luce Bayou ITP Canal at Capers Ridge nr Hardin, TX",
+      "state": "Texas",
+      "site_type": "Canal",
+      "latitude": 30.210416666666667,
+      "longitude": -94.86901388888889,
+      "drainage_area_sqmi": null,
+      "huc": "120302030107"
+    },
+    {
+      "station_id": "USGS-08067000",
+      "name": "Trinity Rv at Liberty, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 30.0577153940297,
+      "longitude": -94.8182567118379,
+      "drainage_area_sqmi": 17468.0,
+      "huc": "120302030301"
+    },
+    {
+      "station_id": "USGS-08068000",
+      "name": "W Fk San Jacinto Rv nr Conroe, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 30.2446573768852,
+      "longitude": -95.457161628802,
+      "drainage_area_sqmi": 828.0,
+      "huc": "120401010401"
+    },
+    {
+      "station_id": "USGS-08068500",
+      "name": "Spring Ck nr Spring, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 30.1104951653714,
+      "longitude": -95.4363274542881,
+      "drainage_area_sqmi": 409.0,
+      "huc": "120401020212"
+    },
+    {
+      "station_id": "USGS-08069500",
+      "name": "W Fk San Jacinto Rv nr Humble, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 30.0271638542905,
+      "longitude": -95.2579887732518,
+      "drainage_area_sqmi": 1741.0,
+      "huc": "120401010501"
+    },
+    {
+      "station_id": "USGS-08070200",
+      "name": "E Fk San Jacinto Rv nr New Caney, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 30.1452305555556,
+      "longitude": -95.1246138888889,
+      "drainage_area_sqmi": 388.0,
+      "huc": "120401030402"
+    },
+    {
+      "station_id": "USGS-08155500",
+      "name": "Barton Spgs at Austin, TX",
+      "state": "Texas",
+      "site_type": "Spring",
+      "latitude": 30.2635416941315,
+      "longitude": -97.7713946863112,
+      "drainage_area_sqmi": null,
+      "huc": "120902050305"
+    },
+    {
+      "station_id": "USGS-08180800",
+      "name": "Medina Rv nr Somerset, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 29.2621828612852,
+      "longitude": -98.5814073975481,
+      "drainage_area_sqmi": 967.0,
+      "huc": "121003020505"
+    },
+    {
+      "station_id": "USGS-08181500",
+      "name": "Medina Rv at San Antonio, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 29.264127606536,
+      "longitude": -98.4908493301929,
+      "drainage_area_sqmi": 1317.0,
+      "huc": "121003020509"
+    },
+    {
+      "station_id": "USGS-08181800",
+      "name": "San Antonio Rv nr Elmendorf, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 29.2221853086533,
+      "longitude": -98.355846269898,
+      "drainage_area_sqmi": 1743.0,
+      "huc": "121003010301"
+    },
+    {
+      "station_id": "USGS-08188060",
+      "name": "San Antonio Rv at SH 72 nr Runge, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 28.8486944444444,
+      "longitude": -97.7371388888889,
+      "drainage_area_sqmi": 3570.0,
+      "huc": "121003030404"
+    },
+    {
+      "station_id": "USGS-08188500",
+      "name": "San Antonio Rv at Goliad, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 28.6492861111111,
+      "longitude": -97.3848583333333,
+      "drainage_area_sqmi": 3921.0,
+      "huc": "121003030604"
+    },
+    {
+      "station_id": "USGS-08211200",
+      "name": "Nueces Rv at Bluntzer, TX",
+      "state": "Texas",
+      "site_type": "Stream",
+      "latitude": 27.9377959429754,
+      "longitude": -97.7758307963344,
+      "drainage_area_sqmi": 16611.0,
+      "huc": "121101110705"
+    },
+    {
+      "station_id": "USGS-08317400",
+      "name": "RIO GRANDE BELOW COCHITI DAM, NM",
+      "state": "New Mexico",
+      "site_type": "Stream",
+      "latitude": 35.618,
+      "longitude": -106.32394444444444,
+      "drainage_area_sqmi": 14900.0,
+      "huc": "130202010209"
+    },
+    {
+      "station_id": "USGS-08380500",
+      "name": "GALLINAS CREEK NEAR MONTEZUMA, NM",
+      "state": "New Mexico",
+      "site_type": "Stream",
+      "latitude": 35.6519944444444,
+      "longitude": -105.318830555556,
+      "drainage_area_sqmi": 84.0,
+      "huc": "130600010805"
+    },
+    {
+      "station_id": "USGS-09010500",
+      "name": "COLORADO RIVER BELOW BAKER GULCH NR GRAND LAKE, CO",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 40.325833,
+      "longitude": -105.856111,
+      "drainage_area_sqmi": 63.8,
+      "huc": "140100010303"
+    },
+    {
+      "station_id": "USGS-09020500",
+      "name": "WILLOW CREEK ABOVE WILLOW CREEK RESERVOIR, CO.",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 40.155794,
+      "longitude": -105.980564,
+      "drainage_area_sqmi": 127.0,
+      "huc": "140100010104"
+    },
+    {
+      "station_id": "USGS-09027100",
+      "name": "FRASER RIVER AT TABERNASH, CO",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 39.990333,
+      "longitude": -105.829778,
+      "drainage_area_sqmi": 115.0,
+      "huc": "140100010206"
+    },
+    {
+      "station_id": "USGS-09034250",
+      "name": "COLORADO RIVER AT WINDY GAP, NEAR GRANBY, CO.",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 40.1083190164593,
+      "longitude": -106.004184684384,
+      "drainage_area_sqmi": 788.0,
+      "huc": "140100010501"
+    },
+    {
+      "station_id": "USGS-09037500",
+      "name": "WILLIAMS FORK NEAR PARSHALL, CO",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 40.0002,
+      "longitude": -106.180367,
+      "drainage_area_sqmi": 184.0,
+      "huc": "140100010407"
+    },
+    {
+      "station_id": "USGS-09040500",
+      "name": "TROUBLESOME CREEK NEAR TROUBLESOME, CO.",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 40.058664,
+      "longitude": -106.305178,
+      "drainage_area_sqmi": 168.0,
+      "huc": "140100010605"
+    },
+    {
+      "station_id": "USGS-09058000",
+      "name": "COLORADO RIVER NEAR KREMMLING, CO",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 40.036667,
+      "longitude": -106.439444,
+      "drainage_area_sqmi": 2379.0,
+      "huc": "140100010905"
+    },
+    {
+      "station_id": "USGS-09060799",
+      "name": "COLORADO RIVER AT CATAMOUNT BRIDGE, CO",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 39.8911,
+      "longitude": -106.831694444444,
+      "drainage_area_sqmi": 2930.0,
+      "huc": "140100011503"
+    },
+    {
+      "station_id": "USGS-09070500",
+      "name": "COLORADO RIVER NEAR DOTSERO, CO",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 39.6446111111111,
+      "longitude": -107.078013888889,
+      "drainage_area_sqmi": 4390.0,
+      "huc": "140100011508"
+    },
+    {
+      "station_id": "USGS-09071750",
+      "name": "COLORADO RIVER ABOVE GLENWOOD SPRINGS, CO",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 39.5588711336553,
+      "longitude": -107.290887364938,
+      "drainage_area_sqmi": 4556.0,
+      "huc": "140100011604"
+    },
+    {
+      "station_id": "USGS-09085000",
+      "name": "ROARING FORK RIVER AT GLENWOOD SPRINGS, CO.",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 39.54666666666667,
+      "longitude": -107.33083333333333,
+      "drainage_area_sqmi": 1453.0,
+      "huc": "140100041003"
+    },
+    {
+      "station_id": "USGS-09095500",
+      "name": "COLORADO RIVER NEAR CAMEO, CO.",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 39.2391463104219,
+      "longitude": -108.266194581311,
+      "drainage_area_sqmi": 7986.0,
+      "huc": "140100051407"
+    },
+    {
+      "station_id": "USGS-09114500",
+      "name": "GUNNISON RIVER NEAR GUNNISON, CO.",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 38.5419356710082,
+      "longitude": -106.9497661258,
+      "drainage_area_sqmi": 1011.0,
+      "huc": "140200020204"
+    },
+    {
+      "station_id": "USGS-09136100",
+      "name": "NORTH FK GUNNISON RIVER ABOVE MOUTH NR LAZEAR, CO",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 38.7851666666667,
+      "longitude": -107.833416666667,
+      "drainage_area_sqmi": 969.0,
+      "huc": "140200040508"
+    },
+    {
+      "station_id": "USGS-09144250",
+      "name": "GUNNISON RIVER AT DELTA, CO",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 38.7530394388892,
+      "longitude": -108.078403073262,
+      "drainage_area_sqmi": 5636.0,
+      "huc": "140200050114"
+    },
+    {
+      "station_id": "USGS-09149500",
+      "name": "UNCOMPAHGRE RIVER AT DELTA, CO",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 38.74194444444444,
+      "longitude": -108.08041666666666,
+      "drainage_area_sqmi": 1114.0,
+      "huc": "140200060606"
+    },
+    {
+      "station_id": "USGS-09152500",
+      "name": "GUNNISON RIVER NEAR GRAND JUNCTION, CO.",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 38.9833157504816,
+      "longitude": -108.450644642269,
+      "drainage_area_sqmi": 7923.0,
+      "huc": "140200050803"
+    },
+    {
+      "station_id": "USGS-09163500",
+      "name": "COLORADO RIVER NEAR COLORADO- UTAH STATE LINE",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 39.132742,
+      "longitude": -109.027075,
+      "drainage_area_sqmi": 17849.0,
+      "huc": "140100051906"
+    },
+    {
+      "station_id": "USGS-10129900",
+      "name": "SILVER CREEK NEAR SILVER CREEK JUNCTION, UT",
+      "state": "Utah",
+      "site_type": "Stream",
+      "latitude": 40.7352263414828,
+      "longitude": -111.476031250118,
+      "drainage_area_sqmi": 17.4,
+      "huc": "160201010403"
+    },
+    {
+      "station_id": "USGS-11461500",
+      "name": "EF RUSSIAN R NR CALPELLA CA",
+      "state": "California",
+      "site_type": "Stream",
+      "latitude": 39.24652277066374,
+      "longitude": -123.13025091509466,
+      "drainage_area_sqmi": 92.2,
+      "huc": "180101100103"
+    },
+    {
+      "station_id": "USGS-11509500",
+      "name": "KLAMATH RIVER AT KENO, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 42.1331994617917,
+      "longitude": -121.962231260697,
+      "drainage_area_sqmi": 3920.0,
+      "huc": "180102060201"
+    },
+    {
+      "station_id": "USGS-11510700",
+      "name": "KLAMATH RIVER BLW JOHN C.BOYLE PWRPLNT, NR KENO,OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 42.0845877081179,
+      "longitude": -122.073345266467,
+      "drainage_area_sqmi": 4080.0,
+      "huc": "180102060202"
+    },
+    {
+      "station_id": "USGS-11511990",
+      "name": "KLAMATH R AB FALL C NR COPCO CA",
+      "state": "California",
+      "site_type": "Stream",
+      "latitude": 41.973,
+      "longitude": -122.36482222222222,
+      "drainage_area_sqmi": 8000.0,
+      "huc": "180102060502"
+    },
+    {
+      "station_id": "USGS-12090400",
+      "name": "NORTH FORK CLOVER CREEK NEAR PARKLAND, WA",
+      "state": "Washington",
+      "site_type": "Stream",
+      "latitude": 47.13451511088991,
+      "longitude": -122.41510134475807,
+      "drainage_area_sqmi": 6.25,
+      "huc": "171100190302"
+    },
+    {
+      "station_id": "USGS-12090500",
+      "name": "CLOVER CREEK NEAR TILLICUM, WA",
+      "state": "Washington",
+      "site_type": "Stream",
+      "latitude": 47.14590297968257,
+      "longitude": -122.51038222855519,
+      "drainage_area_sqmi": 73.8,
+      "huc": "171100190303"
+    },
+    {
+      "station_id": "USGS-12101102",
+      "name": "WHITE RIVER AT 24TH ST E AT DIERINGER, WA",
+      "state": "Washington",
+      "site_type": "Stream",
+      "latitude": 47.2355555555556,
+      "longitude": -122.236111111111,
+      "drainage_area_sqmi": 479.0,
+      "huc": "171100140404"
+    },
+    {
+      "station_id": "USGS-12170350",
+      "name": "SKAGIT RIVER ABOVE KLESILKWA RIVER NEAR HOPE, BC",
+      "state": "British Columbia",
+      "site_type": "Stream",
+      "latitude": 49.11830555555556,
+      "longitude": -121.16686111111112,
+      "drainage_area_sqmi": null,
+      "huc": null
+    },
+    {
+      "station_id": "USGS-12442500",
+      "name": "SIMILKAMEEN RIVER NEAR NIGHTHAWK, WA",
+      "state": "Washington",
+      "site_type": "Stream",
+      "latitude": 48.984601088447,
+      "longitude": -119.61840978273,
+      "drainage_area_sqmi": 3550.0,
+      "huc": "170200072009"
+    },
+    {
+      "station_id": "USGS-12510500",
+      "name": "YAKIMA RIVER AT KIONA, WA",
+      "state": "Washington",
+      "site_type": "Stream",
+      "latitude": 46.2534674761881,
+      "longitude": -119.478079390762,
+      "drainage_area_sqmi": 5615.0,
+      "huc": "170300031203"
+    },
+    {
+      "station_id": "USGS-12511800",
+      "name": "YAKIMA RIVER AT VAN GIESEN BR NEAR RICHLAND, WA",
+      "state": "Washington",
+      "site_type": "Stream",
+      "latitude": 46.297079426367,
+      "longitude": -119.333352665753,
+      "drainage_area_sqmi": null,
+      "huc": "170300031205"
+    },
+    {
+      "station_id": "USGS-14158850",
+      "name": "MCKENZIE R BLW TRAIL BR DAM NR BELKNAP SPRINGS, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 44.267900099113,
+      "longitude": -122.049782610289,
+      "drainage_area_sqmi": 184.0,
+      "huc": "170900040206"
+    },
+    {
+      "station_id": "USGS-14159500",
+      "name": "SOUTH FORK MCKENZIE RIVER NEAR RAINBOW, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 44.1359581695523,
+      "longitude": -122.248390979198,
+      "drainage_area_sqmi": 208.0,
+      "huc": "170900040308"
+    },
+    {
+      "station_id": "USGS-14162200",
+      "name": "BLUE RIVER AT BLUE RIVER, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 44.162348189733,
+      "longitude": -122.333119210082,
+      "drainage_area_sqmi": 87.7,
+      "huc": "170900040403"
+    },
+    {
+      "station_id": "USGS-14162500",
+      "name": "MCKENZIE RIVER NEAR VIDA, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 44.1248487356704,
+      "longitude": -122.470620008956,
+      "drainage_area_sqmi": 930.0,
+      "huc": "170900040702"
+    },
+    {
+      "station_id": "USGS-14163000",
+      "name": "GATE CREEK AT VIDA, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 44.1460861111111,
+      "longitude": -122.573033333333,
+      "drainage_area_sqmi": 47.6,
+      "huc": "170900040701"
+    },
+    {
+      "station_id": "USGS-14163900",
+      "name": "MCKENZIE RIVER NEAR WALTERVILLE, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 44.0698492269484,
+      "longitude": -122.771187401123,
+      "drainage_area_sqmi": 1081.0,
+      "huc": "170900040706"
+    },
+    {
+      "station_id": "USGS-14164550",
+      "name": "CAMP CRK AT CAMP CRK RD BRIDGE, NR SPRINGFIELD, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 44.0706666666667,
+      "longitude": -122.884666666667,
+      "drainage_area_sqmi": 26.0,
+      "huc": "170900040705"
+    },
+    {
+      "station_id": "USGS-14183020",
+      "name": "NORTH SANTIAM RIVER BLW STOUT CREEK, NR MEHAMA, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 44.77822222222222,
+      "longitude": -122.67772222222223,
+      "drainage_area_sqmi": 671.0,
+      "huc": "170900050601"
+    },
+    {
+      "station_id": "USGS-14202980",
+      "name": "SCOGGINS CK BLW HENRY HAGG LAKE, NR GASTON, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 45.4692796819319,
+      "longitude": -123.200109005606,
+      "drainage_area_sqmi": 38.8,
+      "huc": "170900100203"
+    },
+    {
+      "station_id": "USGS-14203500",
+      "name": "TUALATIN RIVER NEAR DILLEY, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 45.4748365069704,
+      "longitude": -123.124273987822,
+      "drainage_area_sqmi": 125.0,
+      "huc": "170900100205"
+    },
+    {
+      "station_id": "USGS-14206241",
+      "name": "TUALATIN RIVER AT HWY 219 NEAR HILLSBORO, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 45.50038888888889,
+      "longitude": -122.99094444444445,
+      "drainage_area_sqmi": 462.0,
+      "huc": "170900100404"
+    },
+    {
+      "station_id": "USGS-14206950",
+      "name": "FANNO CREEK AT DURHAM, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 45.4034520206329,
+      "longitude": -122.754818493538,
+      "drainage_area_sqmi": 31.5,
+      "huc": "170900100502"
+    },
+    {
+      "station_id": "USGS-14207200",
+      "name": "TUALATIN RIVER AT OSWEGO DAM, NEAR WEST LINN, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 45.3565087677307,
+      "longitude": -122.685093653075,
+      "drainage_area_sqmi": 706.0,
+      "huc": "170900100504"
+    },
+    {
+      "station_id": "USGS-14209710",
+      "name": "CLACKAMAS RIVER AT CARTER BRIDGE, NEAR ESTACADA,OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 45.1670650570287,
+      "longitude": -122.15619225554,
+      "drainage_area_sqmi": 594.0,
+      "huc": "170900110406"
+    },
+    {
+      "station_id": "USGS-14210000",
+      "name": "CLACKAMAS RIVER AT ESTACADA, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 45.2998434588304,
+      "longitude": -122.353974629983,
+      "drainage_area_sqmi": 671.0,
+      "huc": "170900110603"
+    },
+    {
+      "station_id": "USGS-14211010",
+      "name": "CLACKAMAS RIVER NEAR OREGON CITY, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 45.3792874273003,
+      "longitude": -122.577313403107,
+      "drainage_area_sqmi": 940.0,
+      "huc": "170900110607"
+    },
+    {
+      "station_id": "USGS-14211720",
+      "name": "WILLAMETTE RIVER AT PORTLAND, OR",
+      "state": "Oregon",
+      "site_type": "Tidal stream",
+      "latitude": 45.5175,
+      "longitude": -122.669166666667,
+      "drainage_area_sqmi": 11200.0,
+      "huc": "170900120202"
+    },
+    {
+      "station_id": "USGS-14316460",
+      "name": "NORTH UMPQUA R AT SODA SPGS, NR TOKETEE FALLS, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 43.3059544131044,
+      "longitude": -122.51282321405,
+      "drainage_area_sqmi": 437.0,
+      "huc": "171003010803"
+    },
+    {
+      "station_id": "USGS-14317450",
+      "name": "NORTH UMPQUA RIVER NEAR IDLEYLD PARK, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 43.3245630355272,
+      "longitude": -122.99978360099,
+      "drainage_area_sqmi": 886.0,
+      "huc": "171003010809"
+    },
+    {
+      "station_id": "USGS-15008000",
+      "name": "SALMON R NR HYDER AK",
+      "state": "Alaska",
+      "site_type": "Stream",
+      "latitude": 56.026111,
+      "longitude": -130.065278,
+      "drainage_area_sqmi": 107.0,
+      "huc": "190101060106"
+    },
+    {
+      "station_id": "USGS-15015595",
+      "name": "UNUK R BL BLUE R NR WRANGELL AK",
+      "state": "Alaska",
+      "site_type": "Stream",
+      "latitude": 56.240556,
+      "longitude": -130.880278,
+      "drainage_area_sqmi": 745.0,
+      "huc": "190101050403"
+    },
+    {
+      "station_id": "USGS-15024800",
+      "name": "STIKINE R NR WRANGELL AK",
+      "state": "Alaska",
+      "site_type": "Stream",
+      "latitude": 56.70792434094444,
+      "longitude": -132.13197080695366,
+      "drainage_area_sqmi": 19630.0,
+      "huc": "190102070911"
+    },
+    {
+      "station_id": "USGS-15041200",
+      "name": "TAKU R NR JUNEAU AK",
+      "state": "Alaska",
+      "site_type": "Stream",
+      "latitude": 58.538611,
+      "longitude": -133.7,
+      "drainage_area_sqmi": 6500.0,
+      "huc": "190103040706"
+    },
+    {
+      "station_id": "USGS-292800090060000",
+      "name": "Little Lake near Bay Dosgris E of Galliano, LA",
+      "state": "Louisiana",
+      "site_type": "Lake, Reservoir, Impoundment",
+      "latitude": 29.4666666666667,
+      "longitude": -90.1,
+      "drainage_area_sqmi": null,
+      "huc": "080903010410"
+    },
+    {
+      "station_id": "USGS-294643095035200",
+      "name": "Lynchburg Res nr CWA Canal Inflow nr Baytown, TX",
+      "state": "Texas",
+      "site_type": "Lake, Reservoir, Impoundment",
+      "latitude": 29.7785861111111,
+      "longitude": -95.0644277777778,
+      "drainage_area_sqmi": null,
+      "huc": "12040104"
+    },
+    {
+      "station_id": "USGS-295554095093402",
+      "name": "Lk Hou at Jack's Ditch (Site 2) nr Houston, TX",
+      "state": "Texas",
+      "site_type": "Lake, Reservoir, Impoundment",
+      "latitude": 29.93825,
+      "longitude": -95.1667777777778,
+      "drainage_area_sqmi": null,
+      "huc": "120401010502"
+    },
+    {
+      "station_id": "USGS-295826095082200",
+      "name": "Lk Houston S Union Pacific RR Bridge nr Houston,TX",
+      "state": "Texas",
+      "site_type": "Lake, Reservoir, Impoundment",
+      "latitude": 29.9739333333333,
+      "longitude": -95.1393833333333,
+      "drainage_area_sqmi": null,
+      "huc": "120401010502"
+    },
+    {
+      "station_id": "USGS-300032095080501",
+      "name": "Lk Houston at FM 1960 nr Huffman, TX",
+      "state": "Texas",
+      "site_type": "Lake, Reservoir, Impoundment",
+      "latitude": 30.0088888888889,
+      "longitude": -95.1348611111111,
+      "drainage_area_sqmi": null,
+      "huc": "120401010502"
+    },
+    {
+      "station_id": "USGS-381142122015801",
+      "name": "FIRST MALLARD BRANCH NR FAIRFIELD CA",
+      "state": "California",
+      "site_type": "Estuary",
+      "latitude": 38.1948944444444,
+      "longitude": -122.032813888889,
+      "drainage_area_sqmi": null,
+      "huc": "180500010401"
+    },
+    {
+      "station_id": "USGS-391953108130201",
+      "name": "ROAN CREEK AT DE BEQUE, CO.",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 39.33119444444445,
+      "longitude": -108.21780555555556,
+      "drainage_area_sqmi": 509.0,
+      "huc": "140100051006"
+    },
+    {
+      "station_id": "USGS-393259107194801",
+      "name": "COLORADO R ABV ROARING FORK R AT GLENWOOD SPGS, CO",
+      "state": "Colorado",
+      "site_type": "Stream",
+      "latitude": 39.54975,
+      "longitude": -107.3301,
+      "drainage_area_sqmi": 4560.0,
+      "huc": "140100050102"
+    },
+    {
+      "station_id": "USGS-404028073384601",
+      "name": "Hempstead Lake Buoy at Lakeview, NY",
+      "state": "New York",
+      "site_type": "Lake, Reservoir, Impoundment",
+      "latitude": 40.67444444444444,
+      "longitude": -73.64611111111111,
+      "drainage_area_sqmi": null,
+      "huc": "020302020204"
+    },
+    {
+      "station_id": "USGS-411955088280601",
+      "name": "HANSON GRAVEL PIT AT CULVERT NEAR MORRIS, IL",
+      "state": "Illinois",
+      "site_type": "Stream",
+      "latitude": 41.3330555555556,
+      "longitude": -88.4669444444445,
+      "drainage_area_sqmi": null,
+      "huc": "071200050705"
+    },
+    {
+      "station_id": "USGS-444306122144600",
+      "name": "DETROIT LAKE AT LOG BOOM BEHIND DETROIT DAM, OR",
+      "state": "Oregon",
+      "site_type": "Lake, Reservoir, Impoundment",
+      "latitude": 44.7183194444444,
+      "longitude": -122.246138888889,
+      "drainage_area_sqmi": null,
+      "huc": "170900050304"
+    },
+    {
+      "station_id": "USGS-452731123092100",
+      "name": "SCOGGINS CREEK NEAR SW OLD HWY 47, NEAR GASTON, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 45.4586111111111,
+      "longitude": -123.155916666667,
+      "drainage_area_sqmi": 43.5,
+      "huc": "170900100203"
+    },
+    {
+      "station_id": "USGS-453030122560101",
+      "name": "ROCK CREEK AT BROOKWOOD AVENUE, HILLSBORO, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 45.5081944444444,
+      "longitude": -122.9335,
+      "drainage_area_sqmi": 72.0,
+      "huc": "170900100403"
+    },
+    {
+      "station_id": "USGS-453040123065201",
+      "name": "GALES CREEK AT OLD HWY 47, FOREST GROVE, OR",
+      "state": "Oregon",
+      "site_type": "Stream",
+      "latitude": 45.5108779981132,
+      "longitude": -123.115665966442,
+      "drainage_area_sqmi": null,
+      "huc": "170900100103"
+    },
+    {
+      "station_id": "USGS-50048570",
+      "name": "LAS CASAS LAKE AT FORT BUCHANAN, GUAYNABO, PR",
+      "state": "Puerto Rico",
+      "site_type": "Lake, Reservoir, Impoundment",
+      "latitude": 18.4145976537577,
+      "longitude": -66.1235552995025,
+      "drainage_area_sqmi": null,
+      "huc": "210100050503"
+    }
+  ]
+}

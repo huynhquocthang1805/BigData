@@ -25,28 +25,15 @@ from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
-import pyarrow as pa
-import pyarrow.dataset as ds
 
 from wq import contracts
 from wq.config import get_settings
+from wq.io import read_silver
 
 
 def load_replay_frame(lake_path: str, start: str, end: str, stations: list[str] | None) -> pd.DataFrame:
-    dataset = ds.dataset(f"{lake_path}/silver/measurements", format="parquet", partitioning="hive")
-    ts_type = dataset.schema.field("ts").type  # ép kiểu mốc lọc theo đúng kiểu cột ts trong file
-
-    def bound(x: str) -> pa.Scalar:
-        t = pd.Timestamp(x, tz="UTC")
-        return pa.scalar(t if getattr(ts_type, "tz", None) else t.tz_localize(None), type=ts_type)
-
-    flt = (ds.field("ts") >= bound(start)) & (ds.field("ts") < bound(end))
-    if stations:
-        flt = flt & ds.field("station_id").isin(stations)
-    df = dataset.to_table(filter=flt, columns=["ts", *contracts.VARIABLE_NAMES]
-                          + ["station_id"]).to_pandas()
-    df["station_id"] = df["station_id"].astype(str)
-    df["ts"] = pd.to_datetime(df["ts"], utc=True)
+    # Đọc silver từ data lake (local hoặc HDFS) trong [start, end)
+    df = read_silver(stations=stations or None, start=start, end=end, lake=lake_path)
     df = df.dropna(subset=contracts.VARIABLE_NAMES, how="all")  # trạm mất kết nối => không có message
     return df.sort_values(["ts", "station_id"], kind="stable").reset_index(drop=True)
 

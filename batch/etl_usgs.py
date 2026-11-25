@@ -87,6 +87,13 @@ def missingness(silver: DataFrame) -> DataFrame:
     return silver.groupBy("station_id").agg(*aggs).orderBy("station_id")
 
 
+def path_exists(spark: SparkSession, path: str) -> bool:
+    """Kiểm tra đường dẫn trên MỌI hệ thống file mà Hadoop hỗ trợ (local, hdfs://, s3a://...)."""
+    jvm = spark.sparkContext._jvm
+    p = jvm.org.apache.hadoop.fs.Path(path)
+    return p.getFileSystem(spark.sparkContext._jsc.hadoopConfiguration()).exists(p)
+
+
 def run_etl(spark: SparkSession, raw_path: str, lake_path: str, start: str = contracts.DATA_START,
             end: str = contracts.DATA_END, scale: int = 1, write: bool = True) -> dict:
     """Chạy toàn bộ ETL, trả về thống kê thời gian từng bước (dùng cho benchmark)."""
@@ -113,6 +120,7 @@ def run_etl(spark: SparkSession, raw_path: str, lake_path: str, start: str = con
     if write:
         miss.coalesce(1).write.mode("overwrite").parquet(f"{lake_path}/gold/missingness")
     stats["missingness"] = [r.asDict() for r in miss.collect()] if scale == 1 else None
+    stats["stations"] = len(stats["missingness"]) if stats["missingness"] else None
     stats["gold_s"] = round(time.perf_counter() - t2, 2)
     stats["total_s"] = round(time.perf_counter() - t0, 2)
     return stats
@@ -127,13 +135,18 @@ def main() -> None:
     ap.add_argument("--end", default=contracts.DATA_END)
     ap.add_argument("--scale", type=int, default=1)
     ap.add_argument("--master", default=None)
+    ap.add_argument("--skip-if-exists", action="store_true", help="bỏ qua nếu silver đã có (_SUCCESS)")
     args = ap.parse_args()
 
     spark = build_spark("wq-batch-etl", master=args.master)
+    if args.skip_if_exists and path_exists(spark, f"{args.lake}/silver/measurements/_SUCCESS"):
+        print(f"Silver đã có tại {args.lake} -> bỏ qua ETL")
+        spark.stop()
+        return
     stats = run_etl(spark, args.raw, args.lake, args.start, args.end, args.scale)
     miss = stats.pop("missingness") or []
     print(json.dumps(stats, indent=2))
-    if miss:
+    if miss and len(miss) <= 20:
         print("\nTỉ lệ thiếu dữ liệu (silver, lưới 15 phút):")
         cols = ["station_id"] + [f"{c}_missing_rate" for c in contracts.VARIABLE_NAMES]
         print(" | ".join(c.replace("_missing_rate", "") for c in cols))

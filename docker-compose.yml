@@ -17,12 +17,28 @@ x-wq-env: &wq-env
   WQ_PG_DB: wq
   WQ_PG_USER: wq
   WQ_PG_PASSWORD: ${WQ_PG_PASSWORD:-wq}
-  WQ_RAW_PATH: /app/data/raw/usgs
-  WQ_LAKE_PATH: /app/data/lake
-  WQ_CHECKPOINT_PATH: /app/data/checkpoints
-  WQ_STATIONS_FILE: /app/config/stations.json
+  # Chế độ mặc định: 10 trạm, data lake trên ổ đĩa. Chế độ Big Data đầy đủ (235 trạm + HDFS):
+  #   docker compose --env-file .env.bigdata up -d      (xem .env.bigdata)
+  WQ_STATIONS_FILE: ${WQ_STATIONS_FILE:-/app/config/stations.json}
+  WQ_LANDING_PATH: ${WQ_LANDING_PATH:-/app/data/raw/usgs}
+  WQ_RAW_GZIP: ${WQ_RAW_GZIP:-0}
+  WQ_RAW_PATH: ${WQ_RAW_PATH:-/app/data/raw/usgs}
+  WQ_LAKE_PATH: ${WQ_LAKE_PATH:-/app/data/lake}
+  WQ_CHECKPOINT_PATH: ${WQ_CHECKPOINT_PATH:-/app/data/checkpoints}
+  WQ_HDFS_REPLICATION: "2"
   WQ_IMPUTER: ${WQ_IMPUTER:-locf}
   WQ_FORECASTER: ${WQ_FORECASTER:-seasonal_naive}
+
+# Cấu hình HDFS cho image apache/hadoop (biến FILE.XML_key được chuyển thành core-site.xml / hdfs-site.xml)
+x-hadoop-env: &hadoop-env
+  CORE-SITE.XML_fs.defaultFS: hdfs://namenode:8020
+  HDFS-SITE.XML_dfs.namenode.rpc-address: namenode:8020
+  HDFS-SITE.XML_dfs.namenode.name.dir: /hadoop/dfs/name
+  HDFS-SITE.XML_dfs.datanode.data.dir: /hadoop/dfs/data
+  HDFS-SITE.XML_dfs.replication: "2"
+  HDFS-SITE.XML_dfs.permissions.enabled: "false"
+  HDFS-SITE.XML_dfs.namenode.datanode.registration.ip-hostname-check: "false"
+  HADOOP_HEAPSIZE_MAX: 512m
 
 x-wq-app: &wq-app
   image: wq-bigdata:latest
@@ -132,16 +148,64 @@ services:
     ports:
       - "8082:8082"
 
-  # ---------------------------------------------------------------- Dữ liệu: tải USGS + batch ETL (chạy 1 lần)
+  # ---------------------------------------------------------------- HDFS (profile hdfs): 1 NameNode + 2 DataNode
+  namenode:
+    image: apache/hadoop:3.5.0
+    profiles: ["hdfs"]
+    hostname: namenode
+    user: root
+    command: ["hdfs", "namenode"]
+    environment:
+      <<: *hadoop-env
+      ENSURE_NAMENODE_DIR: /hadoop/dfs/name/current   # chưa có => format NameNode lần đầu
+    ports:
+      - "9870:9870"   # NameNode UI: datanode, block, dung lượng
+    volumes:
+      - hdfs-name:/hadoop/dfs/name
+    healthcheck:
+      test: ["CMD-SHELL", "hdfs dfsadmin -safemode get | grep -q OFF"]
+      interval: 10s
+      timeout: 20s
+      retries: 18
+
+  datanode-1: &datanode
+    image: apache/hadoop:3.5.0
+    profiles: ["hdfs"]
+    hostname: datanode-1
+    user: root
+    command: ["hdfs", "datanode"]
+    environment:
+      <<: *hadoop-env
+    volumes:
+      - hdfs-data1:/hadoop/dfs/data
+    depends_on:
+      namenode:
+        condition: service_healthy
+
+  datanode-2:
+    <<: *datanode
+    hostname: datanode-2
+    volumes:
+      - hdfs-data2:/hadoop/dfs/data
+
+  # ---------------------------------------------------------------- Dữ liệu: tải USGS -> (HDFS) -> batch ETL (chạy 1 lần)
   data-init:
     <<: *wq-app
     command:
       - bash
       - -c
       - >-
-        python -m ingestion.download_usgs &&
-        if [ -d /app/data/lake/silver/measurements ]; then echo 'silver đã có -> bỏ qua ETL';
-        else python -m batch.etl_usgs --master 'local[2]'; fi
+        python -m ingestion.download_usgs --quiet &&
+        python -m batch.ingest_hdfs &&
+        python -m batch.etl_usgs --skip-if-exists --master "$${WQ_ETL_MASTER:-local[2]}"
+    environment:
+      <<: *wq-env
+      WQ_ETL_MASTER: ${WQ_ETL_MASTER:-local[2]}
+      WQ_DRIVER_MEMORY: 2g
+    depends_on:
+      datanode-2:
+        condition: service_started
+        required: false
 
   # ---------------------------------------------------------------- Streaming (Spark driver, chạy job trên cluster)
   stream-processor:
@@ -172,6 +236,9 @@ services:
         condition: service_started
       spark-worker-2:
         condition: service_started
+      datanode-2:            # chỉ khi bật profile hdfs (checkpoint + data lake trên HDFS)
+        condition: service_started
+        required: false
     restart: on-failure
 
   # ---------------------------------------------------------------- Producer: phát lại giai đoạn test (2025-07 -> 2025-12)
@@ -225,3 +292,6 @@ services:
 volumes:
   pgdata:
   kafkadata:
+  hdfs-name:
+  hdfs-data1:
+  hdfs-data2:

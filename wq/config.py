@@ -32,6 +32,9 @@ class Settings:
 
     # Data lake (Parquet) & checkpoint: phải là thư mục CHIA SẺ giữa driver và mọi executor
     raw_path: str = field(default_factory=lambda: _env("WQ_RAW_PATH", "data/raw/usgs"))
+    # Landing zone: nơi downloader ghi file thô trên máy. Chế độ HDFS: landing (local) -> ingest -> raw_path (hdfs://)
+    landing_path: str = field(default_factory=lambda: _env("WQ_LANDING_PATH", _env("WQ_RAW_PATH", "data/raw/usgs")))
+    raw_gzip: bool = field(default_factory=lambda: _env_bool("WQ_RAW_GZIP", False))
     lake_path: str = field(default_factory=lambda: _env("WQ_LAKE_PATH", "data/lake"))
     checkpoint_path: str = field(default_factory=lambda: _env("WQ_CHECKPOINT_PATH", "data/checkpoints"))
     stations_file: str = field(default_factory=lambda: _env("WQ_STATIONS_FILE", "config/stations.json"))

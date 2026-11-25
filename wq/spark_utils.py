@@ -39,9 +39,18 @@ def build_spark(app_name: str, settings: Settings | None = None, master: str | N
                    .config("spark.sql.streaming.stateStore.providerClass",
                            "org.apache.spark.sql.execution.streaming.state.RocksDBStateStoreProvider")
                    .config("spark.sql.streaming.stateStore.rocksdb.changelogCheckpointing.enabled", "true"))
-    if os.getenv("WQ_SPARK_DRIVER_HOST"):  # chế độ cluster trong Docker: executor phải kết nối ngược về driver
-        builder = (builder.config("spark.driver.host", os.environ["WQ_SPARK_DRIVER_HOST"])
+    use_master = master or s.spark_master
+    driver_host = os.getenv("WQ_SPARK_DRIVER_HOST")
+    if not driver_host and use_master.startswith("spark://"):
+        # Chạy client mode từ một container bất kỳ: executor cần IP của container driver để kết nối ngược
+        import socket
+        driver_host = socket.gethostbyname(socket.gethostname())
+    if driver_host:
+        builder = (builder.config("spark.driver.host", driver_host)
                    .config("spark.driver.bindAddress", "0.0.0.0"))
+    if any(p.startswith("hdfs://") for p in (s.lake_path, s.checkpoint_path, s.raw_path)):
+        # Client HDFS tự quyết hệ số nhân bản của file nó ghi (mặc định 3) => đặt bằng số DataNode của cụm
+        builder = builder.config("spark.hadoop.dfs.replication", os.getenv("WQ_HDFS_REPLICATION", "2"))
     if os.getenv("WQ_EXECUTOR_CORES"):
         builder = builder.config("spark.executor.cores", os.environ["WQ_EXECUTOR_CORES"])
     if os.getenv("WQ_CORES_MAX"):
