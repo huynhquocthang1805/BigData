@@ -1,7 +1,7 @@
 # Việc của TV2, TV3, TV4: cần làm gì, đạt thế nào, đang ở đâu
 
 File này là danh sách việc chính thức của **Quang (TV2)**, **Tài (TV3)** và **Nam (TV4)**. Mã việc (TV2.1, TV3.3…)
-trùng với sơ đồ pipeline nhóm. Mỗi việc có mục **Kết quả cần đạt**: PR được merge khi đạt đủ các ô của việc đó.
+trùng với sơ đồ pipeline nhóm. Mỗi việc có mục **Kết quả cần đạt**: việc được đánh dấu ✅ khi đạt đủ các ô của nó.
 Bảng trạng thái (mục 1) và nhật ký review (mục 8) được cập nhật mỗi khi một PR được merge (quy trình ở mục 6).
 
 Đọc trước: [`team_plan.md`](team_plan.md) (phân công, lịch 4 tuần) · [`data_contract.md`](data_contract.md) (tên cột,
@@ -211,33 +211,36 @@ trên valid, báo cáo trên test.
 ### 6.1 Một lần khi bắt đầu
 
 1. Gửi TV1 username GitHub để được mời làm collaborator, rồi chấp nhận lời mời (qua email hoặc github.com/notifications).
-2. Clone repo và chạy thử. Nhánh mặc định là `thang/TV1`:
+2. Clone repo và chạy thử trên nhánh chính `main`:
 
 ```bash
 git clone https://github.com/huynhquocthang1805/BigData.git
 ```
 
 ```bash
-cd BigData && docker compose build && make test
+cd BigData && git checkout main && docker compose build && make test
 ```
 
 Toàn bộ test phải pass (hiện có 25). Windows không có `make`: chạy lệnh tương ứng trong `Makefile` bằng Git Bash hoặc WSL.
 
-### 6.2 Mỗi việc một nhánh, một PR
+### 6.2 Làm trên nhánh của mình, mở PR vào `main`
+
+Mỗi người làm trên nhánh riêng: `quang/TV2`, `tai/TV3`, `nam/TV4` (TV1 dùng `thang/TV1`). Lần đầu thì tạo nhánh từ `main`:
 
 ```bash
-git checkout thang/TV1 && git pull && git checkout -b tv3/3.1-giao-thuc-che
+git checkout main && git pull && git checkout -b quang/TV2
 ```
 
 Code và viết test, chạy `make test`, rồi đẩy nhánh lên:
 
 ```bash
-git push -u origin tv3/3.1-giao-thuc-che
+git push -u origin quang/TV2
 ```
 
-- Mở PR vào **`thang/TV1`**. Tiêu đề bắt đầu bằng mã việc, ví dụ `[TV3.1] Giao thức che dữ liệu và metric`. Điền mẫu PR (tự hiện khi mở PR).
+- Mở PR từ nhánh của mình vào **`main`**. Tiêu đề bắt đầu bằng mã việc, ví dụ `[TV3.1] Giao thức che dữ liệu và metric`; PR gồm nhiều việc thì ghi đủ các mã, ví dụ `[TV3.1–TV3.5] ...`. Điền mẫu PR (tự hiện khi mở PR).
 - Đang làm dở thì mở PR dạng **Draft** (bot bỏ qua Draft); xong thì bấm **Ready for review**.
-- Mỗi PR một việc (hoặc một phần a, b, c, d). Nếu nhánh bị xung đột, tự gộp nhánh chính vào nhánh của mình bằng `git pull origin thang/TV1` rồi push lại.
+- PR càng nhỏ càng dễ review. PR gồm nhiều việc thì bot chấm riêng từng mã việc.
+- Sau khi PR được merge, cập nhật nhánh của mình trước khi làm tiếp: `git pull origin main`. Nhánh bị xung đột thì cũng gộp `main` vào nhánh của mình như vậy rồi push lại.
 - File dùng chung được phép sửa: `requirements.txt` (thêm thư viện, ghim version), `models/README.md` (thêm dòng), `tests/conftest.py` (thêm fixture, không sửa fixture cũ).
 
 ### 6.3 Kiểm tra tự động
@@ -246,9 +249,10 @@ git push -u origin tv3/3.1-giao-thuc-che
 2. **Bot review** (Claude Code, thay mặt TV1) xem các PR đang mở lúc 7:40, 10:40, 13:40, 16:40, 19:40 và 22:40 mỗi ngày
    (giờ Việt Nam). Bot chạy lại test trong Docker; với PR có mô hình, bot tạo lại file `.joblib` bằng lệnh tái lập và chạy
    `wq.models.validate` trên dữ liệu thật; rồi đối chiếu với mục "Kết quả cần đạt" của mã việc.
-3. **Ổn** thì bot merge (merge commit, giữ nguyên các commit và tên tác giả của bạn), đánh dấu các ô đã đạt, cập nhật bảng
-   trạng thái và nhật ký trong file này. **Chưa ổn** thì bot để lại review liệt kê từng điểm cần sửa; bạn push tiếp lên
-   cùng nhánh, bot sẽ kiểm tra lại. Bot không push vào nhánh của bạn.
+3. **Ổn** (test pass, không rơi vào mục 6.4, phần đã nộp đúng và không rò rỉ dữ liệu) thì bot merge vào `main` (merge
+   commit, giữ nguyên các commit và tên tác giả của bạn) và cập nhật file này: tích các ô đã đạt; việc đạt đủ ô thì ✅,
+   việc còn thiếu ô thì 🔧 kèm phần còn thiếu trong review để bạn bổ sung ở PR sau. **Chưa ổn** thì bot để lại review
+   liệt kê từng điểm cần sửa; bạn push tiếp lên cùng nhánh, bot sẽ kiểm tra lại. Bot không push vào nhánh của bạn.
 
 ### 6.4 Những trường hợp bot không merge mà chuyển TV1 quyết
 
@@ -259,7 +263,7 @@ git push -u origin tv3/3.1-giao-thuc-che
 - Commit dữ liệu (`data/`), file `.joblib`, file lớn hơn 5 MB, notebook kèm output nặng, hoặc bí mật (`.env`, token, mật khẩu).
 - Rò rỉ dữ liệu: fit trên valid hoặc test; chấm điền khuyết trên ô không bị che; mô hình causal dùng dữ liệu tương lai.
 - Số trong báo cáo không khớp file CSV; ngưỡng hoặc luật không có nguồn; thư viện mới chưa ghim version.
-- PR không vào `thang/TV1`, hoặc đến từ tài khoản ngoài nhóm.
+- PR không vào `main`, hoặc đến từ tài khoản ngoài nhóm.
 
 ## 7. Quy tắc chung
 

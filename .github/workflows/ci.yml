@@ -6,7 +6,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [thang/TV1]
+    branches: [main, thang/TV1]
   workflow_dispatch:
 
 concurrency:

@@ -250,7 +250,7 @@ Kiểm tra sau khi bật: log `stream-processor` in `imputer=...joblib`; endpoin
 ## 5b. Review PR của TV2–TV4
 
 Việc, tiêu chí đạt và trạng thái của từng thành viên nằm trong [`TEAM_TASKS.md`](TEAM_TASKS.md). PR của nhóm vào
-`thang/TV1` được kiểm tra hai lớp:
+`main` được kiểm tra hai lớp (code của TV1 nằm trên `thang/TV1` và được gộp vào `main` sau mỗi lần cập nhật):
 
 - **CI** (`.github/workflows/ci.yml`) chạy `pytest` trên GitHub mỗi lần có push vào PR.
 - **Bot review** (Claude Code trong phiên làm việc của TV1) xem các PR đang mở lúc 7:40, 10:40, 13:40, 16:40, 19:40,
