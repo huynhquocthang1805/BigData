@@ -2,7 +2,7 @@
 
 **Phụ trách:** Tài (TV3) · **Cập nhật:** 26/11/2026
 
-Tài liệu ghi lại cách làm, số liệu đã kiểm chứng và tệp nguồn để viết báo cáo cuối kỳ. Cập nhật mục tương ứng sau mỗi đầu việc. Các thay đổi của TV3 đi vào nhánh `TV3`. Khi hoàn thành toàn bộ TV3, mở một PR từ `TV3` vào `thang/TV1`.
+Tài liệu ghi lại cách làm, số liệu đã kiểm chứng và tệp nguồn để viết báo cáo cuối kỳ. Cập nhật mục tương ứng sau mỗi đầu việc. Các thay đổi của TV3 đi vào nhánh `tai/TV3`. Khi hoàn thành toàn bộ TV3, mở một PR từ `tai/TV3` vào `main` theo kế hoạch nộp của TV3. Hướng dẫn review hiện tại của repo vẫn ghi đích `thang/TV1`, nên cần đối chiếu lại quy tắc auto-merge với TV1 trước khi mở PR.
 
 ## 3.1 Giao thức che dữ liệu và chấm điểm
 
@@ -38,7 +38,38 @@ Nguồn bảng là lượt chạy `notebooks/tv3_protocol.ipynb` trên tập tes
 
 ## 3.2 Thực nghiệm các phương pháp điền khuyết
 
-**Trạng thái:** Chờ thực hiện. Hai baseline đã được kiểm chứng trong 3.1. Bổ sung KNN, Iterative Imputer và ứng viên Kalman hoặc DBN theo checklist. Chạy nhiều seed và cập nhật bảng CSV, hình RMSE và điều kiện tái lập tại mục này.
+**Trạng thái:** Đã cài đặt và kiểm chứng ba phương pháp trên dữ liệu thật. Tài đã duyệt phần này để đưa lên nhánh TV3. LOCF đã chạy ở 3.1. Bộ benchmark đầy đủ của checklist còn ứng viên Kalman hoặc DBN và biểu đồ tổng hợp.
+
+### Ba phương pháp
+
+- **Linear Interpolation** dùng baseline sẵn có của TV1, giới hạn vào năm biến chính. Nội suy theo thời gian giữa hai quan sát của cùng một trạm. Khoảng thiếu ở đầu hoặc cuối chuỗi có thể còn trống. Phương pháp dùng cả mốc sau nên chỉ phù hợp cho phân tích offline.
+- **KNN Imputer** dùng scikit-learn, mặc định 5 láng giềng với trọng số theo khoảng cách. Fit riêng theo trạm và chuẩn hóa bằng thống kê train. Giới hạn tối đa 1.024 dòng tham chiếu train mỗi trạm với seed 42 để kiểm soát chi phí, đồng thời giữ ít nhất một quan sát cho từng biến có dữ liệu.
+- **Iterative Imputer** dùng scikit-learn với Bayesian Ridge, tối đa 10 vòng. Fit riêng theo trạm trên toàn bộ train và chuẩn hóa bằng thống kê train. Khi transform, hai mô hình học từ train dùng các biến còn quan sát ở cùng mốc. Hàng thiếu toàn bộ biến dùng được hoặc thuộc trạm chưa fit được giữ thiếu. Cấu hình kiểm chứng được cố định trước khi chấm test.
+
+Mã nguồn [wq/models/imputers_tv3.py](wq/models/imputers_tv3.py), kiểm thử [tests/test_imputers_tv3.py](tests/test_imputers_tv3.py) và lệnh thực nghiệm [benchmarks/bench_imputation_tv3.py](benchmarks/bench_imputation_tv3.py).
+
+### Kết quả lượt thực nghiệm ba phương pháp
+
+- Đọc `silver` bằng dataloader TV1, đủ **10 trạm và 5 biến**. Fit trên **701.760 dòng train** năm 2023–2024, đánh giá trên **176.640 dòng test** nửa cuối 2025. Chạy cả hai kiểu che, tỷ lệ **5%, 10%, 20%, 30%** và seed **42, 43, 44**, được **360 dòng điểm**. Cùng một mask được dùng cho cả ba mô hình ở mỗi tổ hợp.
+- **55 test đạt**, gồm bốn unit test và ba test tích hợp mới. Các test tích hợp đọc USGS thật qua dataloader của TV1, dùng 28.800 dòng train tháng 6/2024 và 6.720 dòng test từ 1 đến hết 7/7/2025. Các test kiểm tra mô hình giữ nguyên quan sát, cột và khóa, rồi chấm được kết quả trên cả năm biến.
+- Nội suy tuyến tính có RMSE trung bình qua ba seed thấp nhất trong 40 tổ hợp biến × kiểu che × tỷ lệ của lượt này. Sai số của mỗi phương pháp tính trên tập ô mà phương pháp đó điền được. Nội suy có thể dùng quan sát sau khoảng trống. KNN và Iterative Imputer dùng mô hình từ train cùng các biến quan sát được ở mốc cần điền. Iterative Imputer báo chưa đạt tiêu chí dừng sớm ở một số trạm sau 10 vòng.
+
+Ví dụ với DO, che theo khối 20%. Bảng là trung bình ba seed, MAE và RMSE tính bằng mg/L.
+
+| Phương pháp | MAE | RMSE | R² | Độ bao phủ |
+|---|---:|---:|---:|---:|
+| Linear Interpolation | 0,3862 | 0,7724 | 0,9221 | 99,83% |
+| KNN Imputer | 1,4136 | 2,1081 | 0,4133 | 98,37% |
+| Iterative Imputer | 1,2825 | 1,8027 | 0,5670 | 98,37% |
+
+Nguồn bảng là `data/tv3_real_test/results_imputation_three_methods.csv` của lượt thực nghiệm cục bộ. Tái lập bằng lệnh sau khi đã sinh hai data lake như ở 3.1, với cửa sổ train/validation bắt đầu từ `2023-01-01` và kết thúc trước `2025-07-01`.
+
+```bash
+python -m benchmarks.bench_imputation_tv3 \
+  --train-lake data/tv3_real_train_valid/lake \
+  --eval-lake data/tv3_real_test/lake \
+  --out data/tv3_real_test/results_imputation_three_methods.csv
+```
 
 ## 3.3 Xuất mô hình causal cho streaming
 
