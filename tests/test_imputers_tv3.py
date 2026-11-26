@@ -7,7 +7,7 @@ from sklearn.exceptions import NotFittedError
 
 from wq.contracts import CORE_VARIABLES, KEY_COLUMNS
 from wq.evaluation import apply_mask, make_mask, score_imputation
-from wq.models.imputers_tv3 import IterativeImputer, KNNImputer, LinearInterpolationImputer
+from wq.models.imputers_tv3 import IterativeImputer, KalmanImputer, KNNImputer, LinearInterpolationImputer
 
 
 def test_linear_interpolates_by_time_within_station():
@@ -85,7 +85,8 @@ def usgs_silver():
 
 
 @pytest.mark.parametrize(
-    "model_cls", [LinearInterpolationImputer, KNNImputer, IterativeImputer], ids=["linear", "knn", "iterative"]
+    "model_cls", [LinearInterpolationImputer, KNNImputer, IterativeImputer, KalmanImputer],
+    ids=["linear", "knn", "iterative", "kalman"],
 )
 def test_imputer_on_real_usgs_silver(model_cls, usgs_silver):
     train, truth, mask = usgs_silver
@@ -104,3 +105,29 @@ def test_imputer_on_real_usgs_silver(model_cls, usgs_silver):
     scores = score_imputation(truth, result, mask, CORE_VARIABLES)
     assert (scores["n_scored"] > 0).all()
     assert np.isfinite(scores[["mae", "rmse", "r2"]].to_numpy()).all()
+
+
+def test_kalman_export_is_causal_and_sets_streaming_flags(sample_df, tmp_path):
+    from streaming.stream_processor import make_impute_fn
+    from wq.contracts import VARIABLE_BIT
+
+    model = KalmanImputer().fit(sample_df)
+    frame = sample_df[sample_df["station_id"].eq("S1")].copy()
+    variable = "dissolved_oxygen"
+    frame.loc[frame.index[0], variable] = np.nan
+    cutoff = frame["ts"].iloc[12]
+    past = frame["ts"] < cutoff
+    changed = frame.copy()
+    changed.loc[~past, variable] = 20.0
+    result = model.transform(frame)
+    pd.testing.assert_frame_equal(result.loc[past], model.transform(changed).loc[past])
+    observed = frame[variable].notna()
+    assert result.loc[observed, variable].equals(frame.loc[observed, variable])
+    assert result[variable].isna().sum() < frame[variable].isna().sum()
+
+    path = model.save(tmp_path / "imputer_kalman.joblib")
+    output = make_impute_fn(str(path), frame["ts"].min())(frame)
+    expected = frame[variable].isna().to_numpy() & result[variable].notna().to_numpy()
+    np.testing.assert_array_equal(output["imputed_mask"], expected * VARIABLE_BIT[variable])
+    assert output["method"].eq("kalman").all()
+    assert pd.isna(output[variable].iloc[0])
