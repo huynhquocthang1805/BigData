@@ -243,27 +243,41 @@ git push -u origin quang/TV2
 - Sau khi PR được merge, cập nhật nhánh của mình trước khi làm tiếp: `git pull origin main`. Nhánh bị xung đột thì cũng gộp `main` vào nhánh của mình như vậy rồi push lại.
 - File dùng chung được phép sửa: `requirements.txt` (thêm thư viện, ghim version), `models/README.md` (thêm dòng), `tests/conftest.py` (thêm fixture, không sửa fixture cũ).
 
-### 6.3 Kiểm tra tự động
+### 6.3 Kiểm tra và merge tự động
 
-1. **CI** (GitHub Actions) chạy `pytest` mỗi lần bạn push vào PR; xem kết quả ở tab Checks của PR.
-2. **Bot review** (Claude Code, thay mặt TV1) xem các PR đang mở lúc 7:40, 10:40, 13:40, 16:40, 19:40 và 22:40 mỗi ngày
-   (giờ Việt Nam). Bot chạy lại test trong Docker; với PR có mô hình, bot tạo lại file `.joblib` bằng lệnh tái lập và chạy
-   `wq.models.validate` trên dữ liệu thật; rồi đối chiếu với mục "Kết quả cần đạt" của mã việc.
-3. **Ổn** (test pass, không rơi vào mục 6.4, phần đã nộp đúng và không rò rỉ dữ liệu) thì bot merge vào `main` (merge
-   commit, giữ nguyên các commit và tên tác giả của bạn) và cập nhật file này: tích các ô đã đạt; việc đạt đủ ô thì ✅,
-   việc còn thiếu ô thì 🔧 kèm phần còn thiếu trong review để bạn bổ sung ở PR sau. **Chưa ổn** thì bot để lại review
-   liệt kê từng điểm cần sửa; bạn push tiếp lên cùng nhánh, bot sẽ kiểm tra lại. Bot không push vào nhánh của bạn.
+1. **CI** (GitHub Actions) chạy `pytest` mỗi khi PR được mở, có push mới, chuyển từ Draft sang sẵn sàng hoặc đổi nhánh
+   đích; xem kết quả ở tab Checks của PR.
+2. **Tự động merge**: CI pass xong, workflow `Auto-merge` kiểm tra PR theo các luật ở mục 6.4 (máy tự kiểm tra được,
+   trong `scripts/automerge_gate.py`). Đạt thì PR được merge vào `main` **ngay** (merge commit, giữ nguyên các commit và
+   tên tác giả của bạn) và có comment xác nhận. Không đạt thì PR chưa được merge và có comment ghi lý do; sửa được thì
+   push tiếp lên cùng nhánh, CI và cổng tự động sẽ chạy lại.
+3. **Bot review** (Claude Code, thay mặt TV1) chạy lúc 7:40, 10:40, 13:40, 16:40, 19:40 và 22:40 mỗi ngày (giờ Việt Nam)
+   để làm phần máy không tự kiểm được (mục 6.5) và cập nhật file này. Bot không push vào nhánh của bạn.
 
-### 6.4 Những trường hợp bot không merge mà chuyển TV1 quyết
+### 6.4 Luật của cổng tự động merge
 
-- CI hoặc test lỗi; xóa, skip hoặc nới lỏng test cũ để test qua.
-- Sửa file ngoài phạm vi sở hữu mà không giải thích trong PR; sửa `streaming/`, `docker-compose.yml`, `docker/`, `.github/`,
-  hoặc sửa chính file này (bot cập nhật file này; muốn đổi tiêu chí thì ghi trong PR để TV1 quyết).
-- Đổi data contract (`wq/contracts.py`, `docs/data_contract.md`), trừ phần `ALERT_RULES` của TV2.
-- Commit dữ liệu (`data/`), file `.joblib`, file lớn hơn 5 MB, notebook kèm output nặng, hoặc bí mật (`.env`, token, mật khẩu).
-- Rò rỉ dữ liệu: fit trên valid hoặc test; chấm điền khuyết trên ô không bị che; mô hình causal dùng dữ liệu tương lai.
-- Số trong báo cáo không khớp file CSV; ngưỡng hoặc luật không có nguồn; thư viện mới chưa ghim version.
-- PR không vào `main`, hoặc đến từ tài khoản ngoài nhóm.
+PR chỉ được tự merge khi CI pass, PR vào `main`, không phải Draft, từ nhánh nằm trong repo này (không phải fork) của
+thành viên có quyền ghi, và không vướng điều nào dưới đây:
+
+- Sửa `.github/`, `docker-compose.yml`, `docker/`, `deploy/`, `streaming/`, `Makefile`, các file `.env*`, cấu hình pytest
+  (`pytest.ini`, `setup.cfg`, `pyproject.toml`), data contract (`wq/contracts.py`, `docs/data_contract.md`) hoặc chính
+  file này (bot cập nhật file này; muốn đổi tiêu chí thì ghi trong PR để TV1 quyết).
+- Sửa, đổi tên hoặc xóa file đã có của TV1: API, benchmark, script, interface mô hình (`wq/models/base.py`,
+  `registry.py`, `validate.py`, `baselines.py`), test cũ, các chương báo cáo của TV1… Thêm file mới vào các thư mục đó
+  thì được.
+- Thêm dữ liệu (`data/`), mô hình (`.joblib`, `.pkl`…), `.parquet`, hoặc file lớn hơn 5 MB (kể cả notebook nhiều output).
+- Xóa hoặc đổi tên test; thêm skip hoặc xfail vào test đã có. Test mới được skip có điều kiện, ví dụ khi thiếu dữ liệu thật.
+
+PR vướng luật thì chờ bot review: TV2 chỉ sửa `ALERT_RULES` trong `wq/contracts.py` thì bot xem và merge nếu ổn; sửa hạ
+tầng, contract hay file của TV1 thì TV1 quyết.
+
+### 6.5 Bot review sau khi merge
+
+Bot chấm những điều máy không tự kiểm được: đạt đủ ô "Kết quả cần đạt" chưa; có rò rỉ dữ liệu không (fit trên valid
+hoặc test, chấm điền khuyết trên ô không bị che, mô hình causal dùng dữ liệu tương lai); mô hình có qua
+`wq.models.validate` trên dữ liệu thật không; số trong báo cáo có khớp CSV không; ngưỡng, luật có nguồn không; thư viện
+mới đã ghim version chưa. Việc đạt đủ ô thì ✅; còn thiếu hoặc có lỗi thì 🔧 và bot comment trên PR đã merge những gì
+cần bổ sung, bạn sửa ở PR tiếp theo.
 
 ## 7. Quy tắc chung
 
