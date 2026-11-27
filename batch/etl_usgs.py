@@ -22,6 +22,7 @@ import time
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 
+from batch.qc_tv2 import apply_advanced_qc, qualifier_rejected
 from wq import contracts
 from wq.config import get_settings
 from wq.spark_transforms import apply_range_qc
@@ -56,16 +57,34 @@ def to_bronze(raw: DataFrame, scale: int = 1) -> DataFrame:
     return df
 
 
-def to_silver(bronze: DataFrame, start: str, end: str) -> DataFrame:
+def to_silver(bronze: DataFrame, start: str, end: str, qualifier_qc: bool = True,
+              advanced_qc: bool = True) -> DataFrame:
+    """bronze (long) -> silver (wide, lưới đều 15 phút).
+
+    QC theo thứ tự: qualifier USGS (TV2.2a, trên từng lần đo) -> phạm vi vật lý (dùng chung với streaming)
+    -> spike + flatline (TV2.2a, trên chuỗi đều của từng trạm). Hai cờ ``qualifier_qc``/``advanced_qc`` chỉ để
+    tách số liệu từng luật trong ``batch.qc_tv2``; pipeline luôn bật cả hai.
+    """
     step = contracts.FREQ_MINUTES * 60
     # 1) Căn về ô 15 phút (dữ liệu 5 phút -> lấy trung bình trong ô)
     aligned = bronze.withColumn(
         "ts", F.timestamp_seconds((F.unix_timestamp("ts") / step).cast("long") * step))
-    # 2) Pivot long -> wide: mỗi dòng = 1 trạm x 1 mốc thời gian
+    # 2) Qualifier: lần đo có mã loại (EQUIP, MAINT, ICE...) => bỏ khỏi trung bình của ô
+    bad = qualifier_rejected() if qualifier_qc else F.lit(False)
+    aligned = (aligned.withColumn("q_bad", bad & F.col("value").isNotNull())
+               .withColumn("value", F.when(F.col("q_bad"), F.lit(None).cast("double")).otherwise(F.col("value"))))
+    # 3) Pivot long -> wide: mỗi dòng = 1 trạm x 1 mốc thời gian
     wide = (aligned.groupBy("station_id", "ts")
             .pivot("variable", contracts.VARIABLE_NAMES)
-            .agg(F.round(F.avg("value"), 4)))
-    # 3) QC phạm vi vật lý: ngoài khoảng => NULL + bật bit trong qc_flags (dùng CHUNG với streaming)
+            .agg(F.round(F.avg("value"), 4).alias("v"), F.max(F.col("q_bad").cast("int")).alias("q")))
+    # ô bị loại vì qualifier = có lần đo bị loại và không còn lần đo tốt nào
+    qflag = F.lit(0)
+    for name in contracts.VARIABLE_NAMES:
+        hit = (F.coalesce(F.col(f"{name}_q"), F.lit(0)) == 1) & F.col(f"{name}_v").isNull()
+        qflag = qflag.bitwiseOR(F.when(hit, F.lit(contracts.VARIABLE_BIT[name])).otherwise(F.lit(0)))
+    wide = wide.select("station_id", "ts", *[F.col(f"{n}_v").alias(n) for n in contracts.VARIABLE_NAMES],
+                       qflag.alias("qc_flags"))
+    # 4) QC phạm vi vật lý: ngoài khoảng => NULL + bật bit trong qc_flags (dùng CHUNG với streaming)
     wide = apply_range_qc(wide)
     # 4) Lưới thời gian đầy đủ [start, end) cho MỌI trạm => mốc không có dữ liệu thành dòng NULL
     stations = wide.select("station_id").distinct()
@@ -77,6 +96,8 @@ def to_silver(bronze: DataFrame, start: str, end: str) -> DataFrame:
     silver = (grid.join(wide, ["station_id", "ts"], "left")
               .withColumn("qc_flags", F.coalesce("qc_flags", F.lit(0)))
               .select("station_id", "ts", *contracts.VARIABLE_NAMES, "qc_flags"))
+    if advanced_qc:
+        silver = apply_advanced_qc(silver)
     return silver
 
 
