@@ -164,6 +164,8 @@ Spark (chế độ `--env-file .env.bigdata`, silver trên HDFS). Không nạp c
 - [ ] So sánh với 10 trạm: thứ hạng các phương pháp có giữ không; RMSE theo loại thủy vực (`site_type` trong `config/stations_large.json`) từ bảng theo trạm.
 - [ ] Thêm một đoạn "mở rộng lên 235 trạm" vào mục 5.1, kèm thời gian chạy trên cụm.
 
+> TV1 chạy thử ngày 27/11 (cụm Spark 2 worker × 2 core, silver trên HDFS, 235 trạm, seed 42): benchmark 611,5 s; fit Kalman 60 s; `validate --stations all` ĐẠT, 4,4 ms/trạm. Kết quả gộp: `models/results_imputation_235.csv` (bảng theo trạm 7 MB không commit, chạy lại với `--per-station-out`). **Cần xem lại lựa chọn online:** trên 235 trạm, trong nhóm causal LOCF tốt nhất ở 25/40 tổ hợp, Kalman 15/40 (trên 10 trạm Kalman 28/40); DO thiếu khối 20%: LOCF 0,765, Kalman 0,972 mg/L.
+
 ### TV3.4 Ch.2: tổng quan điền khuyết và bài báo (2) (cuối tuần 3, viết lúc nào cũng được)
 
 - [x] `docs/report/ch2_dien_khuyet_tv3.md`: cơ chế thiếu MCAR / MAR / MNAR; các nhóm phương pháp; vì sao streaming cần imputer causal; tóm tắt Pazo et al., 2024 (bài (2)).
