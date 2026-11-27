@@ -1,0 +1,26 @@
+code,variable,n_values,n_stations,decision,reason
+(none),discharge,690418,7,giữ,Không có mã
+(none),dissolved_oxygen,1026666,10,giữ,Không có mã
+(none),ph,1020596,10,giữ,Không có mã
+(none),specific_conductance,1022903,10,giữ,Không có mã
+(none),turbidity,1075969,10,giữ,Không có mã
+(none),water_temp,1103787,10,giữ,Không có mã
+EQUIP,discharge,270,1,loại,Thiết bị hỏng (equipment malfunction): giá trị không đáng tin
+EQUIP,dissolved_oxygen,8,2,loại,Thiết bị hỏng (equipment malfunction): giá trị không đáng tin
+EQUIP,ph,11,3,loại,Thiết bị hỏng (equipment malfunction): giá trị không đáng tin
+EQUIP,specific_conductance,712,3,loại,Thiết bị hỏng (equipment malfunction): giá trị không đáng tin
+EQUIP,turbidity,30,4,loại,Thiết bị hỏng (equipment malfunction): giá trị không đáng tin
+EQUIP,water_temp,78,2,loại,Thiết bị hỏng (equipment malfunction): giá trị không đáng tin
+ESTIMATED,discharge,5047,6,loại,"Giá trị ước tính, không phải số đo"
+FORCEINTERPOLATION,discharge,66,1,loại,"Giá trị do USGS nội suy, không phải số đo"
+FORCEINTERPOLATION,dissolved_oxygen,24,1,loại,"Giá trị do USGS nội suy, không phải số đo"
+FORCEINTERPOLATION,ph,7,1,loại,"Giá trị do USGS nội suy, không phải số đo"
+FORCEINTERPOLATION,specific_conductance,15,1,loại,"Giá trị do USGS nội suy, không phải số đo"
+FORCEINTERPOLATION,turbidity,8,1,loại,"Giá trị do USGS nội suy, không phải số đo"
+FORCEINTERPOLATION,water_temp,8,1,loại,"Giá trị do USGS nội suy, không phải số đo"
+ICE,discharge,122,1,loại,Bị băng ảnh hưởng: số đo sai lệch do băng
+MAINT,dissolved_oxygen,1,1,loại,Trạm đang bảo trì: giá trị đo trong lúc thao tác cảm biến
+MAINT,ph,3,1,loại,Trạm đang bảo trì: giá trị đo trong lúc thao tác cảm biến
+MAINT,specific_conductance,1,1,loại,Trạm đang bảo trì: giá trị đo trong lúc thao tác cảm biến
+MAINT,water_temp,1,1,loại,Trạm đang bảo trì: giá trị đo trong lúc thao tác cảm biến
+REVISED,turbidity,10137,1,giữ,Đã được USGS sửa sau khi duyệt: vẫn là số đo

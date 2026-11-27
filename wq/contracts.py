@@ -90,16 +90,25 @@ class AlertRule:
     message_vi: str
 
 
-# Ngưỡng tham khảo (EPA aquatic life criteria / ngưỡng vận hành phổ biến).
-# TV2 (Water Quality Monitoring) chịu trách nhiệm tinh chỉnh + trích dẫn nguồn trong báo cáo.
+# Ngưỡng tuyệt đối dùng trong streaming (mỗi bản ghi). TV2 sở hữu; chỉ giữ ngưỡng có tiêu chí số được trích dẫn
+# (danh mục nguồn đầy đủ: wq.wqi.SOURCES):
+#   [EPA1986DO] U.S. EPA (1986). Ambient Water Quality Criteria for Dissolved Oxygen. EPA 440/5-86-003.
+#               Nước ấm, giai đoạn sớm của sinh vật: DO tối thiểu 1 ngày 5,0 mg/L.
+#   [Rabalais2002] Rabalais, Turner & Wiseman (2002). Gulf of Mexico hypoxia. Annu. Rev. Ecol. Syst. 33:235-263.
+#               Hypoxia: DO < 2 mg/L.
+#   [EPA1986]   U.S. EPA (1986). Quality Criteria for Water 1986 ("Gold Book"). EPA 440/5-86-001.
+#               pH 6,5-9,0 cho đời sống thủy sinh nước ngọt.
+# Nhiệt độ, độ dẫn điện, độ đục KHÔNG có tiêu chí số chung toàn quốc (độ dẫn điện nước lợ vốn > 2000 µS/cm; hướng
+# dẫn độ đục của CCME 2002 tính theo mức tăng so với nền) => đã bỏ TEMP_HIGH, SC_HIGH, TURB_HIGH khỏi danh sách này
+# và thay bằng luật theo mức nền của từng trạm + gộp theo sự kiện trong batch/alerts_tv2.py (TV2.2c).
 ALERT_RULES: tuple[AlertRule, ...] = (
-    AlertRule("dissolved_oxygen", "<", 5.0, "warning", "DO_LOW", "DO < 5 mg/L: nguy cơ ảnh hưởng thủy sinh"),
-    AlertRule("dissolved_oxygen", "<", 2.0, "critical", "DO_HYPOXIA", "DO < 2 mg/L: thiếu oxy (hypoxia)"),
-    AlertRule("ph", "<", 6.5, "warning", "PH_LOW", "pH < 6.5"),
-    AlertRule("ph", ">", 9.0, "warning", "PH_HIGH", "pH > 9.0 (có thể do tảo/vi khuẩn lam nở hoa)"),
-    AlertRule("water_temp", ">", 30.0, "warning", "TEMP_HIGH", "Nhiệt độ nước > 30 °C"),
-    AlertRule("turbidity", ">", 300.0, "warning", "TURB_HIGH", "Độ đục > 300 FNU"),
-    AlertRule("specific_conductance", ">", 2_000.0, "warning", "SC_HIGH", "Độ dẫn điện > 2000 uS/cm"),
+    AlertRule("dissolved_oxygen", "<", 5.0, "warning", "DO_LOW",
+              "DO < 5 mg/L: dưới mức tối thiểu cho thủy sinh nước ấm (EPA 1986)"),
+    AlertRule("dissolved_oxygen", "<", 2.0, "critical", "DO_HYPOXIA",
+              "DO < 2 mg/L: thiếu oxy (hypoxia, Rabalais et al. 2002)"),
+    AlertRule("ph", "<", 6.5, "warning", "PH_LOW", "pH < 6.5: ngoài khoảng 6,5-9,0 (EPA 1986)"),
+    AlertRule("ph", ">", 9.0, "warning", "PH_HIGH",
+              "pH > 9.0: ngoài khoảng 6,5-9,0 (EPA 1986), có thể do tảo nở hoa"),
 )
 
 

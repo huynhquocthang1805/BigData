@@ -90,5 +90,9 @@ TV1 bật bằng biến môi trường `WQ_IMPUTER` / `WQ_FORECASTER` (xem `.env
 ## 7. Mặc định dự báo & cảnh báo
 
 - Target: `dissolved_oxygen`; horizon: 4, 12, 24, 96 bước = **1h, 3h, 6h, 24h**.
-- Luật cảnh báo (TV2 tinh chỉnh + trích nguồn): DO < 5 (warning), DO < 2 (critical), pH < 6,5 hoặc > 9,0,
-  nhiệt độ > 30 °C, độ đục > 300 FNU, độ dẫn điện > 2000 µS/cm.
+- Luật cảnh báo tuyệt đối (`ALERT_RULES`, dùng trong streaming; TV2 sở hữu, nguồn ghi trong `wq/contracts.py`):
+  DO < 5 mg/L (warning, EPA 1986), DO < 2 mg/L (critical, hypoxia), pH < 6,5 hoặc > 9,0 (EPA 1986).
+- Nhiệt độ, độ dẫn điện, độ đục không có tiêu chí số chung toàn quốc ⇒ cảnh báo khi vượt **p99 của chính trạm trên
+  split train** (`TEMP_ANOM`, `SC_ANOM`, `TURB_ANOM`), và mọi cảnh báo gộp theo **sự kiện kéo dài ≥ 1 giờ**
+  (`batch/alerts_tv2.py`; streaming chưa có, xem đặc tả trong PR TV2.2c).
+- Chỉ số chất lượng nước: CCME WQI theo ngày, bảng gold `wqi_daily` (`wq/wqi.py`).
