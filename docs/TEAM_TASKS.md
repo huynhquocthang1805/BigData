@@ -7,7 +7,7 @@ Bảng trạng thái (mục 1) và nhật ký review (mục 8) được cập nh
 Đọc trước: [`team_plan.md`](team_plan.md) (phân công, lịch 4 tuần) · [`data_contract.md`](data_contract.md) (tên cột,
 đơn vị, cách chia dữ liệu, interface mô hình) · [`../notebooks/README.md`](../notebooks/README.md).
 
-Cập nhật lần cuối: 26/11/2026.
+Cập nhật lần cuối: 27/11/2026.
 
 ## 1. Bảng trạng thái
 
@@ -16,9 +16,9 @@ Cập nhật lần cuối: 26/11/2026.
 | Mã | Việc | Người | Hạn | Chờ việc | Trạng thái | PR |
 |---|---|---|---|---|---|---|
 | TV2.1 | Dữ liệu chuẩn: kiểm chứng silver, bảng trạm, bảng thiếu dữ liệu | Quang | Cuối tuần 1 | — | ✅ | [#2](https://github.com/huynhquocthang1805/BigData/pull/2) |
-| TV2.2a | QC nâng cao: qualifier, spike, flatline | Quang | Cuối tuần 2 | TV2.1 | ⬜ | |
+| TV2.2a | QC nâng cao: qualifier, spike, flatline | Quang | Cuối tuần 2 | TV2.1 | ✅ | [#3](https://github.com/huynhquocthang1805/BigData/pull/3) |
 | TV2.2b | Phân bố khoảng thiếu (gửi TV3) và EDA | Quang | Giữa tuần 2 | TV2.1 | ✅ | [#2](https://github.com/huynhquocthang1805/BigData/pull/2) |
-| TV2.2c | WQI và luật cảnh báo có trích nguồn | Quang | Cuối tuần 2 | TV2.1 | ⬜ | |
+| TV2.2c | WQI và luật cảnh báo có trích nguồn | Quang | Cuối tuần 2 | TV2.1 | ✅ | [#3](https://github.com/huynhquocthang1805/BigData/pull/3) |
 | TV2.2d | Trang giám sát trên dashboard | Quang | Cuối tuần 2 | TV2.2c | ⬜ | |
 | TV2.3 | Bản nháp Ch.3 và mục ETL của Ch.4 | Quang | Giữa tuần 3 | TV2.2 | ⬜ | |
 | TV2.4 | Hoàn thiện Ch.3, rà soát số liệu và trích dẫn toàn báo cáo | Quang | Thứ 4 tuần 4 | TV2.3 | ⬜ | |
@@ -80,22 +80,24 @@ Kết quả cần đạt:
 ### TV2.2 QC nâng cao, EDA, WQI, luật cảnh báo (tuần 2, nên tách 4 PR)
 
 **TV2.2a QC nâng cao** (`batch/qc_tv2.py`, gọi trong `to_silver` của `batch/etl_usgs.py`):
-- [ ] Thống kê các mã `qualifier` và `approval_status` thực tế trong bronze; loại giá trị có mã báo thiết bị hỏng, đóng băng, bảo trì… Danh sách mã dựa trên dữ liệu thật và có ghi lý do.
-- [ ] Spike: lệch khỏi trung vị trượt quá k × MAD, hoặc tốc độ thay đổi vượt ngưỡng vật lý của từng biến. Flatline: cùng một giá trị lặp ≥ N mốc liên tiếp ở biến lẽ ra phải dao động. Ghi giá trị k, N trong code và trong Ch.3.
-- [ ] Giá trị bị loại ⇒ đặt NULL và bật bit của biến trong `qc_flags`, đúng contract; không thêm cột vào silver; số dòng silver không đổi.
-- [ ] `tests/test_qc_tv2.py`: chuỗi tổng hợp có spike và flatline bị gắn cờ, chuỗi bình thường không bị; trạm này không ảnh hưởng trạm khác.
-- [ ] `docs/report/tables/tv2_qc_summary.csv`: số và tỉ lệ giá trị bị loại theo luật × biến.
-- [ ] ETL có QC mới vẫn chạy trên bộ lớn (HDFS, cụm Spark); ghi thời gian chạy trước và sau trong PR. Máy không đủ RAM thì ghi trong PR để TV1 chạy.
+- [x] Thống kê các mã `qualifier` và `approval_status` thực tế trong bronze; loại giá trị có mã báo thiết bị hỏng, đóng băng, bảo trì… Danh sách mã dựa trên dữ liệu thật và có ghi lý do.
+- [x] Spike: lệch khỏi trung vị trượt quá k × MAD, hoặc tốc độ thay đổi vượt ngưỡng vật lý của từng biến. Flatline: cùng một giá trị lặp ≥ N mốc liên tiếp ở biến lẽ ra phải dao động. Ghi giá trị k, N trong code và trong Ch.3.
+- [x] Giá trị bị loại ⇒ đặt NULL và bật bit của biến trong `qc_flags`, đúng contract; không thêm cột vào silver; số dòng silver không đổi.
+- [x] `tests/test_qc_tv2.py`: chuỗi tổng hợp có spike và flatline bị gắn cờ, chuỗi bình thường không bị; trạm này không ảnh hưởng trạm khác.
+- [x] `docs/report/tables/tv2_qc_summary.csv`: số và tỉ lệ giá trị bị loại theo luật × biến.
+- [x] ETL có QC mới vẫn chạy trên bộ lớn (HDFS, cụm Spark); ghi thời gian chạy trước và sau trong PR. Máy không đủ RAM thì ghi trong PR để TV1 chạy.
+
+> Review [#3](https://github.com/huynhquocthang1805/BigData/pull/3): bot đo trên cụm Spark 4 core + HDFS, đủ 235 trạm: 541,7 s cho 129,7 triệu giá trị trước QC mới, 564,7 s cho 131,0 triệu giá trị sau QC mới (+3% mỗi triệu giá trị); silver giữ 24.725.760 dòng. Tham số k = 6, cửa sổ 25 mốc đã ghi trong `batch/qc_tv2.py`; ghi vào Ch.3 ở TV2.3.
 
 **TV2.2b Phân bố khoảng thiếu và EDA** (gửi TV3 trước giữa tuần 2):
 - [x] `docs/report/tables/tv2_gap_lengths.csv` với cột `station_id, variable, gap_steps, count` (độ dài các đoạn thiếu liên tiếp) và độ dài lớn nhất của mỗi trạm × biến; hình `docs/images/tv2_gap_lengths.png`.
 - [x] `notebooks/tv2_eda.ipynb`: phân bố từng biến, chu kỳ ngày của DO và nhiệt độ, theo mùa, tương quan giữa các biến; hình lưu thành `docs/images/tv2_*.png`.
 
 **TV2.2c WQI và luật cảnh báo:**
-- [ ] `wq/wqi.py`: một chỉ số WQI có trích nguồn, tính từ các biến đang có. Có bản Spark ghi bảng gold `wqi_daily` (`station_id, date, wqi, wqi_class`); `tests/test_wqi_tv2.py` so với giá trị tính tay.
-- [ ] Sửa `ALERT_RULES` trong `wq/contracts.py`: mỗi ngưỡng có nguồn, ghi trong comment và trong Ch.3.
-- [ ] Giảm cảnh báo nhiễu. Luật hiện tại quá "ồn": trong lượt demo chế độ Big Data có 11.417 cảnh báo cho khoảng 26.666 bản ghi. SC_HIGH chiếm 6.028 cảnh báo ở 11 trạm ven biển (nước lợ vốn có độ dẫn điện cao), DO_LOW 3.475 ở 14 trạm, TEMP_HIGH 2.608 ở 7 trạm. Đề xuất ngưỡng theo loại trạm (trường `site_type` trong `config/stations_large.json`: Stream, Tidal stream, Estuary, Lake…) hoặc chỉ cảnh báo khi vi phạm kéo dài; phần giữ trạng thái trong streaming thì ghi đặc tả trong PR để TV1 làm.
-- [ ] `docs/report/tables/tv2_alerts_before_after.csv`: số cảnh báo theo luật trên split test, trước và sau khi tinh chỉnh, tính bằng Spark với `wq.spark_transforms.alert_events`.
+- [x] `wq/wqi.py`: một chỉ số WQI có trích nguồn, tính từ các biến đang có. Có bản Spark ghi bảng gold `wqi_daily` (`station_id, date, wqi, wqi_class`); `tests/test_wqi_tv2.py` so với giá trị tính tay.
+- [x] Sửa `ALERT_RULES` trong `wq/contracts.py`: mỗi ngưỡng có nguồn, ghi trong comment và trong Ch.3.
+- [x] Giảm cảnh báo nhiễu. Luật hiện tại quá "ồn": trong lượt demo chế độ Big Data có 11.417 cảnh báo cho khoảng 26.666 bản ghi. SC_HIGH chiếm 6.028 cảnh báo ở 11 trạm ven biển (nước lợ vốn có độ dẫn điện cao), DO_LOW 3.475 ở 14 trạm, TEMP_HIGH 2.608 ở 7 trạm. Đề xuất ngưỡng theo loại trạm (trường `site_type` trong `config/stations_large.json`: Stream, Tidal stream, Estuary, Lake…) hoặc chỉ cảnh báo khi vi phạm kéo dài; phần giữ trạng thái trong streaming thì ghi đặc tả trong PR để TV1 làm.
+- [x] `docs/report/tables/tv2_alerts_before_after.csv`: số cảnh báo theo luật trên split test, trước và sau khi tinh chỉnh, tính bằng Spark với `wq.spark_transforms.alert_events`.
 
 **TV2.2d Trang giám sát** (`dashboard/app.py`):
 - [ ] WQI theo trạm và theo thời gian (tính bằng `wq.wqi` trên dữ liệu lấy từ API), bảng hoặc bản đồ trạm theo mức WQI, cảnh báo gần nhất, heatmap tỉ lệ thiếu.
@@ -300,3 +302,4 @@ cần bổ sung, bạn sửa ở PR tiếp theo.
 |---|---|---|---|---|
 | 26/11 13:49 | [#2](https://github.com/huynhquocthang1805/BigData/pull/2) (Quang) | TV2.1, TV2.2b | Tự merge; chấm: cả hai ✅ | Silver 10 trạm × 105.216 mốc = 1.052.160 dòng, 0 khóa trùng, 0 mốc lệch lưới. Chạy lại `batch.data_report_tv2` ra đúng 7 bảng và 2 hình. Bảng EDA dùng `percentile_approx` nên vài phân vị lệch tới 0,3% giữa hai lần chạy (nên đổi sang phân vị chính xác). Lần sau điền mẫu PR và ghi mã việc ở tiêu đề. |
 | 26/11 13:49 | [#1](https://github.com/huynhquocthang1805/BigData/pull/1) (Tài) | TV3.1–TV3.5 | Tự merge; chấm: TV3.2, TV3.3 ✅; TV3.1, TV3.5 🔧; TV3.4 ⏸ | 72/72 test pass, gồm test tích hợp trên dữ liệu thật. Tạo lại Kalman bằng lệnh trong PR: `wq.models.validate` ĐẠT, 4,8 ms/trạm. Chạy lại benchmark seed 42: LOCF, nội suy khớp tuyệt đối; Kalman, Iterative khớp tới sai số làm tròn; KNN lệch ≤ 0,43% RMSE. Linear tốt nhất ở 38/40 tổ hợp test; bảng slide khớp CSV. |
+| 27/11 20:30 | [#3](https://github.com/huynhquocthang1805/BigData/pull/3) (Quang) | TV2.2a, TV2.2c | Cổng không merge (PR vào `thang/TV1`, sửa contract); Quang tự merge vào `thang/TV1`; TV1 duyệt đưa vào `main`; chấm: cả hai ✅ | 84 test pass. `wq/contracts.py` chỉ đổi `ALERT_RULES` (giữ DO, pH có nguồn EPA 1986, Rabalais 2002; nhiệt độ, độ dẫn, độ đục chuyển sang ngưỡng p99 theo trạm + gộp sự kiện ≥ 1 giờ). Cảnh báo trên split test: 10 trạm chuẩn 15.661 → 440; 34 trạm không phải sông 418.876 → 4.291. ETL có QC mới trên cụm + HDFS: 564,7 s cho 131,0 triệu giá trị (+3%). Phần mức nền và sự kiện chưa có trong streaming (việc của TV1). Lần sau: PR vào `main`, không tự merge, điền mẫu PR. |
