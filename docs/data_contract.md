@@ -35,7 +35,8 @@ train, valid, test = (time_split(df, k) for k in ("train", "valid", "test"))
 ```
 
 - Hai bộ trạm: `config/stations.json` (10 trạm chuẩn — mọi thí nghiệm ML báo cáo trên bộ này) và
-  `config/stations_large.json` (235 trạm — chế độ Big Data, chứa luôn 10 trạm chuẩn).
+  `config/stations_large.json` (235 trạm — chế độ Big Data, chứa luôn 10 trạm chuẩn). Thí nghiệm mở rộng của
+  TV3/TV4 trên 235 trạm chạy bằng Spark (`wq/spark_ml.py`, các lệnh có `--stations all`), không nạp cả bộ vào pandas.
 
 ## 3. Chia dữ liệu theo thời gian (bắt buộc dùng chung)
 

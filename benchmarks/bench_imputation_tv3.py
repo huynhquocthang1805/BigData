@@ -1,4 +1,12 @@
-"""So sánh các imputer TV3 trên các mask dùng chung từ giao thức TV3.1."""
+"""So sánh các imputer TV3 trên các mask dùng chung từ giao thức TV3.1.
+
+    python -m benchmarks.bench_imputation_tv3 --out models/results_imputation.csv            # 10 trạm, pandas
+    python -m benchmarks.bench_imputation_tv3 --stations all --master spark://spark-master:7077 \
+        --out models/results_imputation_235.csv                                               # 235 trạm, Spark
+
+Với ``--stations all`` (hoặc ``--engine spark``) mỗi trạm chạy trên một executor qua ``wq.spark_ml``; mask dùng
+seed riêng cho từng trạm nên số liệu khác chút so với bản pandas 10 trạm (mask chung cho cả bảng).
+"""
 from __future__ import annotations
 
 import argparse
@@ -68,15 +76,51 @@ def plot_rmse(scores: pd.DataFrame, path: Path) -> None:
     plt.close(fig)
 
 
+FACTORIES = {cls().name: cls for cls in (LOCFImputer, LinearInterpolationImputer, KNNImputer, IterativeImputer,
+                                          KalmanImputer)}
+
+
+def run_spark(args) -> tuple[pd.DataFrame, pd.DataFrame]:
+    from wq.config import get_settings
+    from wq.io import core_station_ids
+    from wq.spark_ml import imputation_benchmark, read_silver_sdf
+    from wq.spark_utils import build_spark
+
+    lake = get_settings().lake_path
+    spark = build_spark("wq-bench-imputation-tv3", master=args.master)
+    ids = core_station_ids() if args.stations == "core" else None
+    train = read_silver_sdf(spark, args.train_lake or lake, ids, *SPLITS["train"])
+    truth = read_silver_sdf(spark, args.eval_lake or lake, ids, *SPLITS[args.split])
+    return imputation_benchmark(train, truth, FACTORIES, args.seeds)
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--train-lake", help="Data lake chứa split train. Mặc định đọc WQ_LAKE_PATH.")
     parser.add_argument("--eval-lake", help="Data lake chứa split đánh giá. Mặc định đọc WQ_LAKE_PATH.")
     parser.add_argument("--split", choices=("valid", "test"), default="test")
     parser.add_argument("--seeds", type=int, nargs="+", default=[42, 43, 44])
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--plot", type=Path, help="Đường dẫn xuất biểu đồ RMSE.")
+    parser.add_argument("--stations", choices=("core", "all"), default="core",
+                        help="core = 10 trạm chuẩn; all = mọi trạm trong lake (bộ 235 trạm, chạy bằng Spark)")
+    parser.add_argument("--engine", choices=("pandas", "spark"), help="mặc định: pandas cho core, spark cho all")
+    parser.add_argument("--master", help="Spark master, ví dụ spark://spark-master:7077 (mặc định WQ_SPARK_MASTER)")
+    parser.add_argument("--per-station-out", type=Path, help="(Spark) ghi tổng sai số theo từng trạm")
     args = parser.parse_args()
+
+    if (args.engine or ("spark" if args.stations == "all" else "pandas")) == "spark":
+        t0 = perf_counter()
+        scores, parts = run_spark(args)
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        scores.to_csv(args.out, index=False)
+        if args.per_station_out:
+            parts.to_csv(args.per_station_out, index=False)
+        if args.plot:
+            plot_rmse(scores, args.plot)
+        print(f"Spark: {parts['station_id'].nunique()} trạm, {len(scores):,} kết quả trong {perf_counter() - t0:.1f} s"
+              f" → {args.out}")
+        return
 
     train = read_silver("core", *SPLITS["train"], lake=args.train_lake)
     truth = read_silver("core", *SPLITS[args.split], lake=args.eval_lake)

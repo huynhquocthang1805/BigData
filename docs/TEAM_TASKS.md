@@ -27,11 +27,13 @@ Cập nhật lần cuối: 27/11/2026.
 | TV3.3 | Xuất imputer causal tốt nhất | Tài | **Thứ 4 tuần 3** | TV3.2 | ✅ | [#1](https://github.com/huynhquocthang1805/BigData/pull/1) |
 | TV3.4 | Ch.2: tổng quan điền khuyết và bài báo (2) | Tài | Cuối tuần 3 | — | ⏸ | [#1](https://github.com/huynhquocthang1805/BigData/pull/1) |
 | TV3.5 | Mục 4.x và 5.1: thiết kế và kết quả điền khuyết | Tài | Thứ 4 tuần 4 | TV3.2, TV3.3 | 🔧 | [#1](https://github.com/huynhquocthang1805/BigData/pull/1) |
+| TV3.6 | Mở rộng lên 235 trạm bằng Spark: benchmark + imputer | Tài | Cuối tuần 3 | TV3.3 | ⬜ | |
 | TV4.1 | Giao thức đánh giá dự báo và baseline DO | Nam | Cuối tuần 1 | — | ⬜ | |
 | TV4.2 | Đặc trưng thời gian, XGBoost, LSTM | Nam | Cuối tuần 2 | TV4.1 | ⬜ | |
 | TV4.3 | Xuất forecaster tốt nhất | Nam | **Thứ 4 tuần 3** | TV4.2 | ⬜ | |
 | TV4.4 | Thí nghiệm 3 kịch bản: gốc / còn thiếu / đã điền khuyết | Nam | Cuối tuần 3 | TV3.1, TV3.3, TV4.3 | ⬜ | |
 | TV4.5 | Ch.2: dự báo và bài báo (1); mục 4.x và 5.2 | Nam | Thứ 4 tuần 4 | TV4.4 | ⬜ | |
+| TV4.6 | Mở rộng lên 235 trạm bằng Spark: forecaster + đánh giá | Nam | Cuối tuần 3 | TV4.3 | ⬜ | |
 
 **Đường găng:** TV3.2 → TV3.3 → TV4.4 → TV4.5, và TV4.3 → phần tích hợp của TV1. Imputer (TV3.3) và forecaster (TV4.3)
 phải được merge trước **thứ 4 tuần 3**: trễ một ngày ở đây là cả nhóm trễ một ngày. Các việc khác của tuần 1–2 làm song
@@ -46,7 +48,8 @@ song được ngay, không phải chờ ai.
 | Data contract | `wq/contracts.py`, `docs/data_contract.md` | cả ba |
 | Interface mô hình | `wq/models/base.py`: `BaseImputer`, `BaseForecaster`, `PREDICTION_COLUMNS` | TV3, TV4 |
 | Baseline | `wq/models/baselines.py`: LOCF, nội suy tuyến tính, persistence, seasonal-naive | TV3, TV4 |
-| Kiểm tra mô hình trước khi bàn giao | `python -m wq.models.validate <file .joblib>` | TV3, TV4 |
+| Kiểm tra mô hình trước khi bàn giao | `python -m wq.models.validate <file .joblib>` (thêm `--stations all` cho bộ 235 trạm) | TV3, TV4 |
+| Chạy mô hình theo trạm trên cụm Spark (bộ 235 trạm) | `wq/spark_ml.py`: `read_silver_sdf`, `fit_by_station`, `imputation_benchmark` | TV3, TV4 |
 | Bộ dữ liệu lớn: đủ 235 trạm thật (4.206 tệp, 410 MB nén) trên HDFS và cụm Spark | `docker compose --env-file .env.bigdata ...`, xem `docs/TV1_GUIDE.md` | TV2 |
 | Streaming chạy mô hình online | biến `WQ_IMPUTER`, `WQ_FORECASTER` | TV1 tích hợp |
 | API (12 endpoint) và dashboard 4 tab | `api/main.py`, `dashboard/app.py` | TV2 thêm trang giám sát |
@@ -151,6 +154,16 @@ Thí nghiệm trên 10 trạm chuẩn và 5 biến core; fit trên train, chọn
 - [x] `tests/test_imputers_tv3.py` dùng fixture `sample_df`: causal, giữ nguyên giá trị đã quan sát, số ô thiếu giảm.
 - [x] Thêm một dòng mô tả vào bảng trong `models/README.md`.
 
+### TV3.6 Mở rộng lên 235 trạm bằng Spark (cuối tuần 3)
+
+Bộ 10 trạm vẫn là bộ so sánh chính của Ch.5. Việc này chứng minh mô hình chạy được trên dữ liệu lớn, phân tán trên cụm
+Spark (chế độ `--env-file .env.bigdata`, silver trên HDFS). Không nạp cả bộ 235 trạm vào pandas: dùng `wq.spark_ml`.
+
+- [ ] `python -m benchmarks.bench_imputation_tv3 --stations all --master spark://spark-master:7077 --out models/results_imputation_235.csv --per-station-out models/results_imputation_235_by_station.csv` (ít nhất 1 seed, tốt hơn 3); ghi thời gian chạy và cấu hình cụm trong PR.
+- [ ] Fit imputer được chọn trên 235 trạm: `python -m wq.models.imputers_tv3 --method kalman --stations all --master spark://spark-master:7077 --out models/imputer_kalman_235.joblib`; `python -m wq.models.validate models/imputer_kalman_235.joblib --stations all` cho kết luận **ĐẠT**.
+- [ ] So sánh với 10 trạm: thứ hạng các phương pháp có giữ không; RMSE theo loại thủy vực (`site_type` trong `config/stations_large.json`) từ bảng theo trạm.
+- [ ] Thêm một đoạn "mở rộng lên 235 trạm" vào mục 5.1, kèm thời gian chạy trên cụm.
+
 ### TV3.4 Ch.2: tổng quan điền khuyết và bài báo (2) (cuối tuần 3, viết lúc nào cũng được)
 
 - [x] `docs/report/ch2_dien_khuyet_tv3.md`: cơ chế thiếu MCAR / MAR / MNAR; các nhóm phương pháp; vì sao streaming cần imputer causal; tóm tắt Pazo et al., 2024 (bài (2)).
@@ -207,6 +220,16 @@ trên valid, báo cáo trên test.
 - [ ] Luôn chấm trên giá trị thật không bị che.
 - [ ] `models/results_scenarios.csv` với cột `model, scenario, missing_type, missing_rate, horizon_min, station_id, n, mae, rmse`.
 - [ ] Trả lời bằng số: điền khuyết có giúp dự báo tốt hơn không, và ở horizon nào.
+
+### TV4.6 Mở rộng lên 235 trạm bằng Spark (cuối tuần 3)
+
+Như TV3.6: bộ 10 trạm là bộ so sánh chính; việc này cho thấy forecaster huấn luyện và đánh giá được trên dữ liệu lớn,
+phân tán trên cụm Spark. Không nạp cả bộ 235 trạm vào pandas.
+
+- [ ] Huấn luyện bằng Spark: mô hình theo trạm thì dùng `wq.spark_ml.fit_by_station`; mô hình chung cho mọi trạm thì tạo đặc trưng bằng Spark (window theo trạm) và huấn luyện bằng `xgboost.spark` hoặc trên mẫu có ghi rõ cách lấy mẫu. Có lệnh tái lập `python -m wq.models.forecasters_tv4 ... --stations all --master spark://spark-master:7077`.
+- [ ] Đánh giá cuốn chiếu trên 235 trạm chạy bằng Spark (`groupBy("station_id").applyInPandas`, như `wq.spark_ml.imputation_benchmark`) → `models/results_forecast_235.csv`; ghi thời gian chạy và cấu hình cụm.
+- [ ] `python -m wq.models.validate models/forecaster_<tên>_235.joblib --stations all` cho kết luận **ĐẠT**.
+- [ ] So sánh với kết quả 10 trạm trong mục 5.2.
 
 ### TV4.5 Ch.2 phần dự báo, mục 4.x và 5.2 (thứ 4 tuần 4)
 

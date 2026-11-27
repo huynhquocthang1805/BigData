@@ -194,7 +194,20 @@ def main() -> None:
     parser.add_argument("--method", choices=models, required=True)
     parser.add_argument("--out", required=True)
     parser.add_argument("--lake", help="Data lake train. Mặc định đọc WQ_LAKE_PATH.")
+    parser.add_argument("--stations", choices=("core", "all"), default="core",
+                        help="all = fit trên mọi trạm trong lake (235 trạm), từng trạm chạy trên Spark executor")
+    parser.add_argument("--master", help="Spark master khi --stations all, ví dụ spark://spark-master:7077")
     args = parser.parse_args()
+    if args.stations == "all":
+        from wq.config import get_settings
+        from wq.spark_ml import fit_by_station, read_silver_sdf
+        from wq.spark_utils import build_spark
+
+        spark = build_spark("wq-fit-imputer-tv3", master=args.master)
+        train = read_silver_sdf(spark, args.lake or get_settings().lake_path, None, *SPLITS["train"])
+        model = fit_by_station(train, models[args.method])
+        print(f"{len(getattr(model, 'parameters_', getattr(model, 'models_', {}))):,} trạm ->", model.save(args.out))
+        return
     train = read_silver("core", *SPLITS["train"], lake=args.lake)
     if train.empty:
         parser.error("Không đọc được dòng train từ silver.")

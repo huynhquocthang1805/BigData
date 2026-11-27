@@ -42,12 +42,12 @@ class Report:
             print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
 
 
-def sample_history(days: int) -> pd.DataFrame:
+def sample_history(days: int, stations: str = "core") -> pd.DataFrame:
     from wq.io import read_silver
     lo, hi = contracts.SPLITS["test"]
     end = pd.Timestamp(hi, tz="UTC")
     start = end - pd.Timedelta(days=days)
-    df = read_silver(stations="core", start=str(start.date()), end=str(end.date()))
+    df = read_silver(stations=None if stations == "all" else "core", start=str(start.date()), end=str(end.date()))
     return regularize(df[contracts.MEASUREMENT_COLUMNS])
 
 
@@ -108,6 +108,8 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("spec", help="đường dẫn .joblib hoặc tên built-in")
     ap.add_argument("--kind", choices=["imputer", "forecaster"], help="mặc định: tự đoán")
     ap.add_argument("--days", type=int, default=3, help="số ngày lịch sử dùng để thử (mặc định 3)")
+    ap.add_argument("--stations", choices=["core", "all"], default="core",
+                    help="all = mọi trạm trong lake (bộ 235 trạm, đặt WQ_LAKE_PATH tới HDFS)")
     args = ap.parse_args(argv)
 
     kind = args.kind
@@ -126,7 +128,7 @@ def main(argv: list[str] | None = None) -> None:
         rep.add(False, "nạp mô hình", f"{type(e).__name__}: {e}")
         rep.print()
         sys.exit(1)
-    hist = sample_history(args.days)
+    hist = sample_history(args.days, args.stations)
     print(f"Kiểm tra {kind} '{args.spec}' trên {hist['station_id'].nunique()} trạm x {args.days} ngày (split test):")
     (check_imputer if kind == "imputer" else check_forecaster)(model, hist, rep)
     rep.print()
