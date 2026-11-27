@@ -7,7 +7,7 @@ Bảng trạng thái (mục 1) và nhật ký review (mục 8) được cập nh
 Đọc trước: [`team_plan.md`](team_plan.md) (phân công, lịch 4 tuần) · [`data_contract.md`](data_contract.md) (tên cột,
 đơn vị, cách chia dữ liệu, interface mô hình) · [`../notebooks/README.md`](../notebooks/README.md).
 
-Cập nhật lần cuối: 25/11/2026.
+Cập nhật lần cuối: 26/11/2026.
 
 ## 1. Bảng trạng thái
 
@@ -15,18 +15,18 @@ Cập nhật lần cuối: 25/11/2026.
 
 | Mã | Việc | Người | Hạn | Chờ việc | Trạng thái | PR |
 |---|---|---|---|---|---|---|
-| TV2.1 | Dữ liệu chuẩn: kiểm chứng silver, bảng trạm, bảng thiếu dữ liệu | Quang | Cuối tuần 1 | — | ⬜ | |
+| TV2.1 | Dữ liệu chuẩn: kiểm chứng silver, bảng trạm, bảng thiếu dữ liệu | Quang | Cuối tuần 1 | — | ✅ | [#2](https://github.com/huynhquocthang1805/BigData/pull/2) |
 | TV2.2a | QC nâng cao: qualifier, spike, flatline | Quang | Cuối tuần 2 | TV2.1 | ⬜ | |
-| TV2.2b | Phân bố khoảng thiếu (gửi TV3) và EDA | Quang | Giữa tuần 2 | TV2.1 | ⬜ | |
+| TV2.2b | Phân bố khoảng thiếu (gửi TV3) và EDA | Quang | Giữa tuần 2 | TV2.1 | ✅ | [#2](https://github.com/huynhquocthang1805/BigData/pull/2) |
 | TV2.2c | WQI và luật cảnh báo có trích nguồn | Quang | Cuối tuần 2 | TV2.1 | ⬜ | |
 | TV2.2d | Trang giám sát trên dashboard | Quang | Cuối tuần 2 | TV2.2c | ⬜ | |
 | TV2.3 | Bản nháp Ch.3 và mục ETL của Ch.4 | Quang | Giữa tuần 3 | TV2.2 | ⬜ | |
 | TV2.4 | Hoàn thiện Ch.3, rà soát số liệu và trích dẫn toàn báo cáo | Quang | Thứ 4 tuần 4 | TV2.3 | ⬜ | |
-| TV3.1 | Giao thức che dữ liệu và metric (`wq/evaluation.py`) | Tài | Cuối tuần 1 | — | ⬜ | |
-| TV3.2 | Cài và đánh giá ≥ 4 phương pháp điền khuyết | Tài | Cuối tuần 2 | TV3.1 | ⬜ | |
-| TV3.3 | Xuất imputer causal tốt nhất | Tài | **Thứ 4 tuần 3** | TV3.2 | ⬜ | |
-| TV3.4 | Ch.2: tổng quan điền khuyết và bài báo (2) | Tài | Cuối tuần 3 | — | ⬜ | |
-| TV3.5 | Mục 4.x và 5.1: thiết kế và kết quả điền khuyết | Tài | Thứ 4 tuần 4 | TV3.2, TV3.3 | ⬜ | |
+| TV3.1 | Giao thức che dữ liệu và metric (`wq/evaluation.py`) | Tài | Cuối tuần 1 | — | 🔧 | [#1](https://github.com/huynhquocthang1805/BigData/pull/1) |
+| TV3.2 | Cài và đánh giá ≥ 4 phương pháp điền khuyết | Tài | Cuối tuần 2 | TV3.1 | ✅ | [#1](https://github.com/huynhquocthang1805/BigData/pull/1) |
+| TV3.3 | Xuất imputer causal tốt nhất | Tài | **Thứ 4 tuần 3** | TV3.2 | ✅ | [#1](https://github.com/huynhquocthang1805/BigData/pull/1) |
+| TV3.4 | Ch.2: tổng quan điền khuyết và bài báo (2) | Tài | Cuối tuần 3 | — | ⏸ | [#1](https://github.com/huynhquocthang1805/BigData/pull/1) |
+| TV3.5 | Mục 4.x và 5.1: thiết kế và kết quả điền khuyết | Tài | Thứ 4 tuần 4 | TV3.2, TV3.3 | 🔧 | [#1](https://github.com/huynhquocthang1805/BigData/pull/1) |
 | TV4.1 | Giao thức đánh giá dự báo và baseline DO | Nam | Cuối tuần 1 | — | ⬜ | |
 | TV4.2 | Đặc trưng thời gian, XGBoost, LSTM | Nam | Cuối tuần 2 | TV4.1 | ⬜ | |
 | TV4.3 | Xuất forecaster tốt nhất | Nam | **Thứ 4 tuần 3** | TV4.2 | ⬜ | |
@@ -72,10 +72,10 @@ Môn là Big Data, nên mọi xử lý trên data lake viết bằng **Spark** (
 Khung tải và ETL đã chạy. Việc của bạn là nhận phần này, kiểm chứng và lập bảng mô tả dữ liệu cho Ch.3.
 
 Kết quả cần đạt:
-- [ ] Chạy `make data` rồi `make etl` trên máy mình; silver có đúng 10 trạm × 105.216 mốc = 1.052.160 dòng (dán số đếm vào PR).
-- [ ] Script Spark `batch/data_report_tv2.py` sinh lại được các bảng dưới đây từ data lake, chạy lại ra cùng số.
-- [ ] `docs/report/tables/tv2_stations.csv`: mỗi trạm một dòng gồm mã, tên, bang, loại thủy vực (sông, hồ, cửa sông), các biến có đo, lý do chọn.
-- [ ] `docs/report/tables/tv2_missingness.csv`: tỉ lệ thiếu theo trạm × biến, tách train / valid / test; hình `docs/images/tv2_missingness.png`.
+- [x] Chạy `make data` rồi `make etl` trên máy mình; silver có đúng 10 trạm × 105.216 mốc = 1.052.160 dòng (dán số đếm vào PR).
+- [x] Script Spark `batch/data_report_tv2.py` sinh lại được các bảng dưới đây từ data lake, chạy lại ra cùng số.
+- [x] `docs/report/tables/tv2_stations.csv`: mỗi trạm một dòng gồm mã, tên, bang, loại thủy vực (sông, hồ, cửa sông), các biến có đo, lý do chọn.
+- [x] `docs/report/tables/tv2_missingness.csv`: tỉ lệ thiếu theo trạm × biến, tách train / valid / test; hình `docs/images/tv2_missingness.png`.
 
 ### TV2.2 QC nâng cao, EDA, WQI, luật cảnh báo (tuần 2, nên tách 4 PR)
 
@@ -88,8 +88,8 @@ Kết quả cần đạt:
 - [ ] ETL có QC mới vẫn chạy trên bộ lớn (HDFS, cụm Spark); ghi thời gian chạy trước và sau trong PR. Máy không đủ RAM thì ghi trong PR để TV1 chạy.
 
 **TV2.2b Phân bố khoảng thiếu và EDA** (gửi TV3 trước giữa tuần 2):
-- [ ] `docs/report/tables/tv2_gap_lengths.csv` với cột `station_id, variable, gap_steps, count` (độ dài các đoạn thiếu liên tiếp) và độ dài lớn nhất của mỗi trạm × biến; hình `docs/images/tv2_gap_lengths.png`.
-- [ ] `notebooks/tv2_eda.ipynb`: phân bố từng biến, chu kỳ ngày của DO và nhiệt độ, theo mùa, tương quan giữa các biến; hình lưu thành `docs/images/tv2_*.png`.
+- [x] `docs/report/tables/tv2_gap_lengths.csv` với cột `station_id, variable, gap_steps, count` (độ dài các đoạn thiếu liên tiếp) và độ dài lớn nhất của mỗi trạm × biến; hình `docs/images/tv2_gap_lengths.png`.
+- [x] `notebooks/tv2_eda.ipynb`: phân bố từng biến, chu kỳ ngày của DO và nhiệt độ, theo mùa, tương quan giữa các biến; hình lưu thành `docs/images/tv2_*.png`.
 
 **TV2.2c WQI và luật cảnh báo:**
 - [ ] `wq/wqi.py`: một chỉ số WQI có trích nguồn, tính từ các biến đang có. Có bản Spark ghi bảng gold `wqi_daily` (`station_id, date, wqi, wqi_class`); `tests/test_wqi_tv2.py` so với giá trị tính tay.
@@ -124,39 +124,45 @@ Thí nghiệm trên 10 trạm chuẩn và 5 biến core; fit trên train, chọn
 
 ### TV3.1 Giao thức che dữ liệu và metric (cuối tuần 1)
 
-- [ ] `wq/evaluation.py` có tối thiểu ba hàm:
+- [x] `wq/evaluation.py` có tối thiểu ba hàm:
   - `make_mask(df, rate, kind, *, variables, block_steps, seed) -> DataFrame[bool]`: `kind` là `"random"` hoặc `"block"`; chỉ che ô đang có giá trị; khối không vượt ranh giới trạm.
   - `apply_mask(df, mask) -> DataFrame`: đặt NaN ở các ô bị che.
   - `score_imputation(truth, imputed, mask, variables) -> DataFrame`: MAE, RMSE, R² theo biến, **chỉ trên ô bị che có giá trị thật**.
 - [ ] Độ dài khối tạm lấy 1–24 giờ (4–96 mốc); khi có `tv2_gap_lengths.csv` của TV2.2b thì lấy mẫu theo phân bố thật.
-- [ ] `tests/test_evaluation.py` kiểm tra: tỉ lệ che đúng (lệch ≤ 0,5 điểm phần trăm); chỉ ô có giá trị bị che; khối liên tục, không vượt trạm; cùng seed ra cùng mask; imputer "hoàn hảo" cho MAE = 0 và R² = 1; sửa ô không bị che không làm đổi điểm.
-- [ ] `notebooks/tv3_protocol.ipynb` minh họa giao thức trên dữ liệu thật.
+- [x] `tests/test_evaluation.py` kiểm tra: tỉ lệ che đúng (lệch ≤ 0,5 điểm phần trăm); chỉ ô có giá trị bị che; khối liên tục, không vượt trạm; cùng seed ra cùng mask; imputer "hoàn hảo" cho MAE = 0 và R² = 1; sửa ô không bị che không làm đổi điểm.
+- [x] `notebooks/tv3_protocol.ipynb` minh họa giao thức trên dữ liệu thật.
+
+> Review [#1](https://github.com/huynhquocthang1805/BigData/pull/1): còn lấy mẫu độ dài khối theo `docs/report/tables/tv2_gap_lengths.csv` (đã có từ [#2](https://github.com/huynhquocthang1805/BigData/pull/2)).
 
 ### TV3.2 Ít nhất 4 phương pháp điền khuyết (cuối tuần 2)
 
-- [ ] LOCF và nội suy tuyến tính (có sẵn trong `wq/models/baselines.py`), KNN hoặc MICE (scikit-learn), Kalman hoặc DBN. Code đặt trong `wq/models/imputers_tv3.py`, không chỉ nằm trong notebook.
-- [ ] `models/results_imputation.csv` với cột `method, causal, missing_type, missing_rate, variable, seed, n_masked, mae, rmse, r2, fit_s, transform_s`; đủ 4 phương pháp × 4 tỉ lệ (5, 10, 20, 30%) × 2 kiểu thiếu × 5 biến × ít nhất 3 seed.
-- [ ] Hình `docs/images/tv3_rmse_by_rate.png`: RMSE theo tỉ lệ thiếu, mỗi phương pháp một đường, tách thiếu ngẫu nhiên và thiếu khối.
-- [ ] Thư viện mới (statsmodels, pykalman…) ghim version trong `requirements.txt`; chạy lại ra cùng số.
+- [x] LOCF và nội suy tuyến tính (có sẵn trong `wq/models/baselines.py`), KNN hoặc MICE (scikit-learn), Kalman hoặc DBN. Code đặt trong `wq/models/imputers_tv3.py`, không chỉ nằm trong notebook.
+- [x] `models/results_imputation.csv` với cột `method, causal, missing_type, missing_rate, variable, seed, n_masked, mae, rmse, r2, fit_s, transform_s`; đủ 4 phương pháp × 4 tỉ lệ (5, 10, 20, 30%) × 2 kiểu thiếu × 5 biến × ít nhất 3 seed.
+- [x] Hình `docs/images/tv3_rmse_by_rate.png`: RMSE theo tỉ lệ thiếu, mỗi phương pháp một đường, tách thiếu ngẫu nhiên và thiếu khối.
+- [x] Thư viện mới (statsmodels, pykalman…) ghim version trong `requirements.txt`; chạy lại ra cùng số.
 
 ### TV3.3 Xuất imputer causal tốt nhất (thứ 4 tuần 3, đường găng)
 
-- [ ] Class trong `wq/models/imputers_tv3.py` kế thừa `BaseImputer`, `causal = True`, chỉ dùng dữ liệu quá khứ.
-- [ ] Có lệnh tái lập `python -m wq.models.imputers_tv3 --method <tên> --out models/imputer_<tên>.joblib` (fit trên train). Không commit file `.joblib` (thư mục `models/` nằm trong `.gitignore`); bot và TV1 chạy lệnh này để tạo lại.
-- [ ] `python -m wq.models.validate models/imputer_<tên>.joblib` cho kết luận **ĐẠT** (dán kết quả vào PR); thời gian ≤ 100 ms/trạm để không làm chậm micro-batch.
-- [ ] `tests/test_imputers_tv3.py` dùng fixture `sample_df`: causal, giữ nguyên giá trị đã quan sát, số ô thiếu giảm.
-- [ ] Thêm một dòng mô tả vào bảng trong `models/README.md`.
+- [x] Class trong `wq/models/imputers_tv3.py` kế thừa `BaseImputer`, `causal = True`, chỉ dùng dữ liệu quá khứ.
+- [x] Có lệnh tái lập `python -m wq.models.imputers_tv3 --method <tên> --out models/imputer_<tên>.joblib` (fit trên train). Không commit file `.joblib` (thư mục `models/` nằm trong `.gitignore`); bot và TV1 chạy lệnh này để tạo lại.
+- [x] `python -m wq.models.validate models/imputer_<tên>.joblib` cho kết luận **ĐẠT** (dán kết quả vào PR); thời gian ≤ 100 ms/trạm để không làm chậm micro-batch.
+- [x] `tests/test_imputers_tv3.py` dùng fixture `sample_df`: causal, giữ nguyên giá trị đã quan sát, số ô thiếu giảm.
+- [x] Thêm một dòng mô tả vào bảng trong `models/README.md`.
 
 ### TV3.4 Ch.2: tổng quan điền khuyết và bài báo (2) (cuối tuần 3, viết lúc nào cũng được)
 
-- [ ] `docs/report/ch2_dien_khuyet_tv3.md`: cơ chế thiếu MCAR / MAR / MNAR; các nhóm phương pháp; vì sao streaming cần imputer causal; tóm tắt Pazo et al., 2024 (bài (2)).
+- [x] `docs/report/ch2_dien_khuyet_tv3.md`: cơ chế thiếu MCAR / MAR / MNAR; các nhóm phương pháp; vì sao streaming cần imputer causal; tóm tắt Pazo et al., 2024 (bài (2)).
 - [ ] Số liệu và tên phương pháp DI / EBDI / SEM của bài (2) đã **đối chiếu với bản PDF** (xem lưu ý trong `docs/01_danh_gia_tai_lieu.md`).
+
+> Review [#1](https://github.com/huynhquocthang1805/BigData/pull/1): chương ghi nguồn mục 2.3 và 2.4.1–2.4.3 của bài; TV1 đối chiếu với bản PDF để chốt ô này.
 
 ### TV3.5 Mục 4.x và 5.1 (thứ 4 tuần 4)
 
-- [ ] `docs/report/ch4_dien_khuyet_tv3.md`: thiết kế giao thức thí nghiệm và các phương pháp.
+- [x] `docs/report/ch4_dien_khuyet_tv3.md`: thiết kế giao thức thí nghiệm và các phương pháp.
 - [ ] `docs/report/ch5_dien_khuyet_tv3.md` (mục 5.1): bảng và hình từ `results_imputation.csv`; phương pháp tốt nhất cho từng kiểu và tỉ lệ thiếu; phương pháp được chọn chạy online và lý do.
-- [ ] Số cho slide TV3 (RMSE thiếu khối 5, 10, 20, 30% × 4 phương pháp) ghi trong PR; TV1 điền vào slide.
+- [x] Số cho slide TV3 (RMSE thiếu khối 5, 10, 20, 30% × 4 phương pháp) ghi trong PR; TV1 điền vào slide.
+
+> Review [#1](https://github.com/huynhquocthang1805/BigData/pull/1): mục 5.1 dùng số trên validation (Kalman đứng đầu nhóm causal 24/40 tổ hợp, hạng 1,40) nhưng repo chưa có CSV validation; commit kết quả `--split valid` làm nguồn rồi tích ô thứ hai.
 
 ## 5. TV4 · Nam — Dự báo chất lượng nước và đánh giá mô hình
 
@@ -243,27 +249,41 @@ git push -u origin quang/TV2
 - Sau khi PR được merge, cập nhật nhánh của mình trước khi làm tiếp: `git pull origin main`. Nhánh bị xung đột thì cũng gộp `main` vào nhánh của mình như vậy rồi push lại.
 - File dùng chung được phép sửa: `requirements.txt` (thêm thư viện, ghim version), `models/README.md` (thêm dòng), `tests/conftest.py` (thêm fixture, không sửa fixture cũ).
 
-### 6.3 Kiểm tra tự động
+### 6.3 Kiểm tra và merge tự động
 
-1. **CI** (GitHub Actions) chạy `pytest` mỗi lần bạn push vào PR; xem kết quả ở tab Checks của PR.
-2. **Bot review** (Claude Code, thay mặt TV1) xem các PR đang mở lúc 7:40, 10:40, 13:40, 16:40, 19:40 và 22:40 mỗi ngày
-   (giờ Việt Nam). Bot chạy lại test trong Docker; với PR có mô hình, bot tạo lại file `.joblib` bằng lệnh tái lập và chạy
-   `wq.models.validate` trên dữ liệu thật; rồi đối chiếu với mục "Kết quả cần đạt" của mã việc.
-3. **Ổn** (test pass, không rơi vào mục 6.4, phần đã nộp đúng và không rò rỉ dữ liệu) thì bot merge vào `main` (merge
-   commit, giữ nguyên các commit và tên tác giả của bạn) và cập nhật file này: tích các ô đã đạt; việc đạt đủ ô thì ✅,
-   việc còn thiếu ô thì 🔧 kèm phần còn thiếu trong review để bạn bổ sung ở PR sau. **Chưa ổn** thì bot để lại review
-   liệt kê từng điểm cần sửa; bạn push tiếp lên cùng nhánh, bot sẽ kiểm tra lại. Bot không push vào nhánh của bạn.
+1. **CI** (GitHub Actions) chạy `pytest` mỗi khi PR được mở, có push mới, chuyển từ Draft sang sẵn sàng hoặc đổi nhánh
+   đích; xem kết quả ở tab Checks của PR.
+2. **Tự động merge**: CI pass xong, workflow `Auto-merge` kiểm tra PR theo các luật ở mục 6.4 (máy tự kiểm tra được,
+   trong `scripts/automerge_gate.py`). Đạt thì PR được merge vào `main` **ngay** (merge commit, giữ nguyên các commit và
+   tên tác giả của bạn) và có comment xác nhận. Không đạt thì PR chưa được merge và có comment ghi lý do; sửa được thì
+   push tiếp lên cùng nhánh, CI và cổng tự động sẽ chạy lại.
+3. **Bot review** (Claude Code, thay mặt TV1) chạy lúc 7:40, 10:40, 13:40, 16:40, 19:40 và 22:40 mỗi ngày (giờ Việt Nam)
+   để làm phần máy không tự kiểm được (mục 6.5) và cập nhật file này. Bot không push vào nhánh của bạn.
 
-### 6.4 Những trường hợp bot không merge mà chuyển TV1 quyết
+### 6.4 Luật của cổng tự động merge
 
-- CI hoặc test lỗi; xóa, skip hoặc nới lỏng test cũ để test qua.
-- Sửa file ngoài phạm vi sở hữu mà không giải thích trong PR; sửa `streaming/`, `docker-compose.yml`, `docker/`, `.github/`,
-  hoặc sửa chính file này (bot cập nhật file này; muốn đổi tiêu chí thì ghi trong PR để TV1 quyết).
-- Đổi data contract (`wq/contracts.py`, `docs/data_contract.md`), trừ phần `ALERT_RULES` của TV2.
-- Commit dữ liệu (`data/`), file `.joblib`, file lớn hơn 5 MB, notebook kèm output nặng, hoặc bí mật (`.env`, token, mật khẩu).
-- Rò rỉ dữ liệu: fit trên valid hoặc test; chấm điền khuyết trên ô không bị che; mô hình causal dùng dữ liệu tương lai.
-- Số trong báo cáo không khớp file CSV; ngưỡng hoặc luật không có nguồn; thư viện mới chưa ghim version.
-- PR không vào `main`, hoặc đến từ tài khoản ngoài nhóm.
+PR chỉ được tự merge khi CI pass, PR vào `main`, không phải Draft, từ nhánh nằm trong repo này (không phải fork) của
+thành viên có quyền ghi, và không vướng điều nào dưới đây:
+
+- Sửa `.github/`, `docker-compose.yml`, `docker/`, `deploy/`, `streaming/`, `Makefile`, các file `.env*`, cấu hình pytest
+  (`pytest.ini`, `setup.cfg`, `pyproject.toml`), data contract (`wq/contracts.py`, `docs/data_contract.md`) hoặc chính
+  file này (bot cập nhật file này; muốn đổi tiêu chí thì ghi trong PR để TV1 quyết).
+- Sửa, đổi tên hoặc xóa file đã có của TV1: API, benchmark, script, interface mô hình (`wq/models/base.py`,
+  `registry.py`, `validate.py`, `baselines.py`), test cũ, các chương báo cáo của TV1… Thêm file mới vào các thư mục đó
+  thì được.
+- Thêm dữ liệu (`data/`), mô hình (`.joblib`, `.pkl`…), `.parquet`, hoặc file lớn hơn 5 MB (kể cả notebook nhiều output).
+- Xóa hoặc đổi tên test; thêm skip hoặc xfail vào test đã có. Test mới được skip có điều kiện, ví dụ khi thiếu dữ liệu thật.
+
+PR vướng luật thì chờ bot review: TV2 chỉ sửa `ALERT_RULES` trong `wq/contracts.py` thì bot xem và merge nếu ổn; sửa hạ
+tầng, contract hay file của TV1 thì TV1 quyết.
+
+### 6.5 Bot review sau khi merge
+
+Bot chấm những điều máy không tự kiểm được: đạt đủ ô "Kết quả cần đạt" chưa; có rò rỉ dữ liệu không (fit trên valid
+hoặc test, chấm điền khuyết trên ô không bị che, mô hình causal dùng dữ liệu tương lai); mô hình có qua
+`wq.models.validate` trên dữ liệu thật không; số trong báo cáo có khớp CSV không; ngưỡng, luật có nguồn không; thư viện
+mới đã ghim version chưa. Việc đạt đủ ô thì ✅; còn thiếu hoặc có lỗi thì 🔧 và bot comment trên PR đã merge những gì
+cần bổ sung, bạn sửa ở PR tiếp theo.
 
 ## 7. Quy tắc chung
 
@@ -278,4 +298,5 @@ git push -u origin quang/TV2
 
 | Thời gian | PR | Mã việc | Kết quả | Ghi chú |
 |---|---|---|---|---|
-| — | — | — | — | Chưa có PR nào |
+| 26/11 13:49 | [#2](https://github.com/huynhquocthang1805/BigData/pull/2) (Quang) | TV2.1, TV2.2b | Tự merge; chấm: cả hai ✅ | Silver 10 trạm × 105.216 mốc = 1.052.160 dòng, 0 khóa trùng, 0 mốc lệch lưới. Chạy lại `batch.data_report_tv2` ra đúng 7 bảng và 2 hình. Bảng EDA dùng `percentile_approx` nên vài phân vị lệch tới 0,3% giữa hai lần chạy (nên đổi sang phân vị chính xác). Lần sau điền mẫu PR và ghi mã việc ở tiêu đề. |
+| 26/11 13:49 | [#1](https://github.com/huynhquocthang1805/BigData/pull/1) (Tài) | TV3.1–TV3.5 | Tự merge; chấm: TV3.2, TV3.3 ✅; TV3.1, TV3.5 🔧; TV3.4 ⏸ | 72/72 test pass, gồm test tích hợp trên dữ liệu thật. Tạo lại Kalman bằng lệnh trong PR: `wq.models.validate` ĐẠT, 4,8 ms/trạm. Chạy lại benchmark seed 42: LOCF, nội suy khớp tuyệt đối; Kalman, Iterative khớp tới sai số làm tròn; KNN lệch ≤ 0,43% RMSE. Linear tốt nhất ở 38/40 tổ hợp test; bảng slide khớp CSV. |

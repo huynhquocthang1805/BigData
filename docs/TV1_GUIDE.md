@@ -247,20 +247,24 @@ Kiểm tra sau khi bật: log `stream-processor` in `imputer=...joblib`; endpoin
 `/predictions/accuracy` có dòng của model mới. Nếu model cần thư viện mới (vd. `torch`), thêm vào
 `requirements.txt` (ghim version) rồi `docker compose build`.
 
-## 5b. Review PR của TV2–TV4
+## 5b. CI/CD: kiểm tra và merge PR của TV2–TV4
 
-Việc, tiêu chí đạt và trạng thái của từng thành viên nằm trong [`TEAM_TASKS.md`](TEAM_TASKS.md). PR của nhóm vào
-`main` được kiểm tra hai lớp (code của TV1 nằm trên `thang/TV1` và được gộp vào `main` sau mỗi lần cập nhật):
+Việc, tiêu chí đạt và trạng thái của từng thành viên nằm trong [`TEAM_TASKS.md`](TEAM_TASKS.md). Thành viên làm trên
+nhánh riêng và mở PR vào `main`; code của TV1 nằm trên `thang/TV1` và được gộp vào `main` sau mỗi lần cập nhật.
 
-- **CI** (`.github/workflows/ci.yml`) chạy `pytest` trên GitHub mỗi lần có push vào PR.
-- **Bot review** (Claude Code trong phiên làm việc của TV1) xem các PR đang mở lúc 7:40, 10:40, 13:40, 16:40, 19:40,
-  22:40 giờ Việt Nam: chạy lại test trong Docker, tạo lại và kiểm tra mô hình trên dữ liệu thật, đối chiếu tiêu chí của
-  mã việc. Đạt thì merge (merge commit, giữ commit của thành viên) và cập nhật `TEAM_TASKS.md`; chưa đạt thì để review
-  liệt kê việc cần sửa. Các trường hợp ở mục 6.4 của `TEAM_TASKS.md` (đổi contract, sửa streaming/Docker/CI, tài khoản
-  ngoài nhóm…) không tự merge mà chờ TV1 quyết.
+1. **CI** (`.github/workflows/ci.yml`) chạy `pytest` trên GitHub khi PR được mở, có push mới, chuyển từ Draft sang sẵn
+   sàng hoặc đổi nhánh đích, và khi `main` thay đổi.
+2. **Tự động merge** (`.github/workflows/automerge.yml`): CI pass xong, `scripts/automerge_gate.py` kiểm tra luật ở mục 6.4
+   của `TEAM_TASKS.md` qua GitHub API và merge ngay nếu đạt, không chờ lịch; xong thì chạy lại CI trên `main`. Workflow
+   chạy bằng sự kiện `workflow_run`, nên luôn dùng bản script trên nhánh mặc định và không chạy code của PR với quyền
+   ghi. PR vướng luật (sửa hạ tầng, contract, file của TV1, xóa test, file lớn…) không được merge mà có comment ghi lý do.
+3. **Bot review** (Claude Code trong phiên làm việc của TV1) chạy lúc 7:40, 10:40, 13:40, 16:40, 19:40, 22:40 giờ Việt
+   Nam: chấm các PR vừa merge theo tiêu chí của mã việc (kiểm tra mô hình trên dữ liệu thật, rò rỉ dữ liệu, số liệu báo
+   cáo), cập nhật `TEAM_TASKS.md`, và xem các PR bị cổng giữ lại để merge nếu ổn hoặc chờ TV1 quyết.
 
-TV1 vẫn có thể tự review và merge trên GitHub bất cứ lúc nào. Muốn đổi lịch hoặc dừng bot, nói trong phiên Claude Code
-hoặc xóa scheduled task "Review PR nhóm BigData".
+TV1 vẫn có thể tự review và merge trên GitHub bất cứ lúc nào. Muốn tắt tự động merge: xóa hoặc vô hiệu hóa workflow
+`Auto-merge` trong tab Actions. Muốn đổi lịch hoặc dừng bot: nói trong phiên Claude Code hoặc xóa scheduled task
+"Review PR nhóm BigData".
 
 ## 6. Kịch bản demo khi bảo vệ (~5 phút)
 

@@ -1,0 +1,38 @@
+# Tự động merge PR của thành viên vào main ngay khi CI pass và PR đạt các luật máy kiểm tra được
+# (docs/TEAM_TASKS.md mục 6.3–6.4; luật nằm trong scripts/automerge_gate.py).
+# Chạy bằng workflow_run nên luôn dùng bản workflow và script trên nhánh mặc định, và KHÔNG chạy code của PR
+# với quyền ghi: script chỉ đọc PR qua GitHub API.
+name: Auto-merge
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+
+concurrency:
+  group: automerge-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  automerge:
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Kiểm tra luật và merge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          PRS: ${{ toJson(github.event.workflow_run.pull_requests) }}
+        run: python3 scripts/automerge_gate.py

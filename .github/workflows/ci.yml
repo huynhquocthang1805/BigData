@@ -5,6 +5,8 @@ name: CI
 
 on:
   pull_request:
+    # ready_for_review: Draft chuyển sang sẵn sàng; edited: đổi nhánh đích (vd. sang main) => kiểm tra lại
+    types: [opened, synchronize, reopened, ready_for_review, edited]
   push:
     branches: [main, thang/TV1]
   workflow_dispatch:
