@@ -6,13 +6,19 @@ TV2 mở rộng phần "Giám sát" (WQI, thống kê, bản đồ); TV3/TV4 b�
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
 import requests
 import streamlit as st
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # chạy `streamlit run` ngoài Docker vẫn import được
+from dashboard import monitoring_tv2  # noqa: E402
+
 API = os.getenv("WQ_API_URL", "http://localhost:8000")
+MAX_WQ_STATIONS = 20  # tab "Chất lượng nước" gọi /measurements cho từng trạm
 COLORS = {"raw": "#1f77b4", "imputed": "#ff7f0e", "forecast": "#2ca02c", "threshold": "#d62728"}
 
 st.set_page_config(page_title="Water Quality Monitoring", page_icon="💧", layout="wide")
@@ -77,7 +83,14 @@ def main_view():
     c[4].metric("Độ trễ p95 (batch gần nhất)", f"{lat[-1]['latency_p95_ms'] / 1000:.1f} s" if lat else "–")
     st.caption(f"Thời điểm dữ liệu mới nhất (event time): {tot['max_event_time'] or '–'}")
 
-    tab_mon, tab_pred, tab_alert, tab_pipe = st.tabs(["Giám sát", "Dự báo", "Cảnh báo", "Pipeline"])
+    tab_mon, tab_wq, tab_pred, tab_alert, tab_pipe = st.tabs(
+        ["Giám sát", "Chất lượng nước", "Dự báo", "Cảnh báo", "Pipeline"])
+
+    with tab_wq:  # TV2.2d: WQI, bản đồ theo mức WQI, cảnh báo gần nhất, heatmap tỉ lệ thiếu
+        active = [s for s in stations.loc[has_data, "station_id"]][:MAX_WQ_STATIONS]
+        monitoring_tv2.render(api, stations, var_info, days, active, meta["freq_minutes"])
+        if int(has_data.sum()) > MAX_WQ_STATIONS:
+            st.caption(f"Hiển thị {MAX_WQ_STATIONS}/{int(has_data.sum())} trạm có dữ liệu đầu tiên.")
 
     with tab_mon:
         left, right = st.columns([2, 1])
