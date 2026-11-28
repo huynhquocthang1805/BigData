@@ -5,6 +5,7 @@ from html import escape
 import json
 import os
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -24,7 +25,9 @@ page = st.sidebar.radio("Điều hướng", list(PAGES), label_visibility="colla
 
 @st.cache_data(ttl=5, show_spinner=False)
 def api(path, **params):
-    response = requests.get(API + path, params=params, timeout=(4, 60))
+    # Compose resolves its own service name inside the network, including on hosts with an HTTP proxy.
+    proxies = {"no_proxy": "api"} if urlsplit(API).hostname == "api" else None
+    response = requests.get(API + path, params=params, proxies=proxies, timeout=(4, 60))
     response.raise_for_status()
     return response.json()
 
