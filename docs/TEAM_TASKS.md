@@ -7,7 +7,7 @@ Bảng trạng thái (mục 1) và nhật ký review (mục 8) được cập nh
 Đọc trước: [`team_plan.md`](team_plan.md) (phân công, lịch 4 tuần) · [`data_contract.md`](data_contract.md) (tên cột,
 đơn vị, cách chia dữ liệu, interface mô hình) · [`../notebooks/README.md`](../notebooks/README.md).
 
-Cập nhật lần cuối: 27/11/2026.
+Cập nhật lần cuối ngày 28/11/2026.
 
 ## 1. Bảng trạng thái
 
@@ -31,7 +31,7 @@ Cập nhật lần cuối: 27/11/2026.
 | TV4.1 | Giao thức đánh giá dự báo và baseline DO | Nam | Cuối tuần 1 | — | ⬜ | |
 | TV4.2 | Đặc trưng thời gian, XGBoost, LSTM | Nam | Cuối tuần 2 | TV4.1 | ⬜ | |
 | TV4.3 | Xuất forecaster tốt nhất | Nam | **Thứ 4 tuần 3** | TV4.2 | ⬜ | |
-| TV4.4 | Thí nghiệm 3 kịch bản: gốc / còn thiếu / đã điền khuyết | Nam | Cuối tuần 3 | TV3.1, TV3.3, TV4.3 | ⬜ | |
+| TV4.4 | Thí nghiệm 3 kịch bản: gốc / còn thiếu / đã điền khuyết | Nam | Cuối tuần 3 | TV3.1, TV3.3, TV4.3 | Đã chạy 235 trạm, chờ merge | [Kết quả](report/validation_va_test_do.md#kết-quả-ba-kịch-bản) |
 | TV4.5 | Ch.2: dự báo và bài báo (1); mục 4.x và 5.2 | Nam | Thứ 4 tuần 4 | TV4.4 | ⬜ | |
 | TV4.6 | Mở rộng lên 235 trạm bằng Spark: forecaster + đánh giá | Nam | Cuối tuần 3 | TV4.3 | ⬜ | |
 
@@ -215,13 +215,13 @@ trên valid, báo cáo trên test kèm số trạm và số điểm chấm đư�
 
 ### TV4.4 Thí nghiệm 3 kịch bản dữ liệu (cuối tuần 3)
 
-- [ ] Chạy ba kịch bản trên cùng tập test và danh mục 235 trạm, giữ cùng mô hình Ridge và cùng seed.
+- [x] Chạy ba kịch bản trên cùng tập test và danh mục 235 trạm, giữ cùng mô hình Ridge và cùng seed.
   - **Gốc**: dữ liệu test như hiện có (chỉ có khoảng thiếu tự nhiên).
   - **Còn thiếu**: che thêm dữ liệu đầu vào bằng `wq.evaluation.make_mask` của TV3.1 (ít nhất 20% kiểu khối, tốt hơn là 10, 20 và 30%), không điền.
   - **Đã điền khuyết**: cùng dữ liệu "còn thiếu", điền bằng imputer của TV3.3 trước khi dự báo.
-- [ ] Luôn chấm trên giá trị thật không bị che.
-- [ ] Lưu kết quả 36 tổ hợp seed, horizon và kịch bản vào `docs/report/tables/ridge-scenarios-test.csv` kèm số trạm, độ phủ và sai số trên các thời điểm chung. [Giao thức và lệnh Spark](report/validation_va_test_do.md#thí-nghiệm-ba-kịch-bản-trên-235-trạm-tv44)
-- [ ] Trả lời bằng số: điền khuyết có giúp dự báo tốt hơn không, và ở horizon nào.
+- [x] Luôn chấm trên giá trị thật không bị che.
+- [x] Lưu kết quả 36 tổ hợp seed, horizon và kịch bản vào `docs/report/tables/ridge-scenarios-test.csv` kèm số trạm, độ phủ và sai số trên các thời điểm chung. [Giao thức và lệnh Spark](report/validation_va_test_do.md#thí-nghiệm-ba-kịch-bản-trên-235-trạm-tv44)
+- [x] Trả lời bằng số: điền khuyết có giúp dự báo tốt hơn không, và ở horizon nào.
 
 ### TV4.6 Mở rộng lên 235 trạm bằng Spark (cuối tuần 3)
 

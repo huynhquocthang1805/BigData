@@ -24,7 +24,8 @@
 - Streaming có điền khuyết và dự báo không mất bản ghi nào với 10, 50 và 100 trạm; số trạm tăng 10 lần thì độ trễ
   p50 tăng 43% (5,5 → 7,9 s ở 1.000 msg/s).
 - Trên tập test tháng 7–12/2025, khi che theo đoạn 20% DO, LOCF đạt RMSE 0,7700 mg/L, MAE 0,4000 mg/L và độ phủ 99,92% qua ba seed. Có 230/235 trạm đóng góp điểm điền khuyết ở mức này. [Kết quả test](validation_va_test_do.md)
-- Ridge có kết quả dự báo trên 229/235 trạm. So với baseline tốt nhất từng khoảng, RMSE test giảm 23,08% ở 1 giờ, 39,21% ở 3 giờ, 21,61% ở 6 giờ và 5,11% ở 24 giờ. Trong thí nghiệm che thêm 10% và giữ cùng mô hình Ridge, LOCF cho RMSE thấp hơn Kalman ở cả bốn khoảng. Phép so sánh với để trống đầu vào có giao thức riêng ở mục TV4.4. [Kết quả dự báo và giao thức ba kịch bản](validation_va_test_do.md)
+- Ridge có kết quả dự báo trên 229/235 trạm. So với baseline tốt nhất từng khoảng, RMSE test giảm 23,08% ở 1 giờ, 39,21% ở 3 giờ, 21,61% ở 6 giờ và 5,11% ở 24 giờ. Trong thí nghiệm che thêm 10% và giữ cùng mô hình Ridge, LOCF cho RMSE thấp hơn Kalman ở cả bốn khoảng. [Kết quả dự báo](validation_va_test_do.md)
+- Trong thí nghiệm ba kịch bản trên 235 trạm, che thêm 20% DO theo đoạn rồi điền LOCF nâng độ phủ dự báo từ 69,40% lên 99,44% ở 24 giờ, thêm trung bình 218.470 dự báo mỗi seed. Trên các mốc khôi phục mà lịch sử gốc cũng dự báo được, RMSE là 0,7373 mg/L với LOCF và 0,6101 mg/L với lịch sử gốc. Trên các mốc cả ba kịch bản đều phát được dự báo, sai số bằng nhau. [Kết quả ba kịch bản](validation_va_test_do.md#kết-quả-ba-kịch-bản)
 
 ## 6.2 Hạn chế
 

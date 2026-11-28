@@ -70,7 +70,7 @@ Riêng ở mức thiếu 20%, LOCF điền và chấm được 2.046.792 trong 2
 
 Ba mô hình dự báo có cùng số trạm và số điểm chấm ở mỗi khoảng. Baseline có RMSE thấp nhất là Persistence ở 1 giờ, Seasonal Naive ở 3 và 6 giờ. Hai baseline bằng điểm nhau ở 24 giờ. Mức giảm tính từ RMSE trước khi làm tròn. [CSV dự báo](../../data/report/forecast-test.csv) · [CSV theo trạm](../../data/report/forecast-test-stations.csv)
 
-Sáu trạm vắng trong bảng dự báo test. Năm trạm `USGS-04183038`, `USGS-07288048`, `USGS-07288068`, `USGS-07288500` và `USGS-07288521` cũng có 0 điểm DO bị che ở mức 20%. Trạm `USGS-06893100` có 273 điểm DO bị che ở seed 42 nhưng không có dòng dự báo. CSV tổng hợp chưa cho biết ở trạm này thiếu dữ liệu huấn luyện hay thiếu thời điểm chấm đủ đặc trưng. [Điền khuyết theo trạm](../../data/report/imputation-test-stations.csv) · [Dự báo theo trạm](../../data/report/forecast-test-stations.csv)
+Đối chiếu Silver cho thấy năm trạm `USGS-04183038`, `USGS-07288048`, `USGS-07288068`, `USGS-07288500` và `USGS-07288521` đều thiếu toàn bộ DO trong tập test. Trạm thứ sáu, `USGS-06893100`, có 1.363 quan trắc DO trên test nhưng thiếu toàn bộ DO trong tập train, nên không fit được Ridge riêng cho trạm. [Số quan trắc theo trạm](tables/ridge-scenarios-input-stations.csv) · [Dự báo theo trạm](../../data/report/forecast-test-stations.csv)
 
 ### Sai số dự báo test theo loại thủy vực
 
@@ -114,7 +114,46 @@ Câu hỏi là khi mất thêm 20% quan trắc DO theo đoạn, điền LOCF kh�
 
 Phát dự báo vào đầu mỗi giờ UTC, ở 1, 3, 6 và 24 giờ. Lịch sử bắt đầu từ đầu tập test. Mẫu số `n_targets` giống nhau giữa ba kịch bản trong mỗi seed và khoảng dự báo, chỉ gồm mốc đích có DO thật và nằm ngoài mặt nạ. Bảng dự báo chính ở trên dùng các mốc phát cách nhau 15 phút và cách chuẩn bị lịch sử của benchmark gốc.
 
-Trên máy có Silver 235 trạm, chạy lệnh sau tại thư mục repo sau khi cập nhật mã. Cần HDFS, Spark master và hai worker đang chạy, với lõi Spark còn trống. Khi thấy dòng `Saved 36 rows`, bảng tổng hợp đã được ghi vào `docs/report/tables/ridge-scenarios-test.csv`. CSV theo trạm nằm ở `data/report/ridge-scenarios-test-stations.csv`.
+### Kết quả ba kịch bản
+
+Ba phần Parquet xuất từ Silver khớp đủ 235 mã trạm của danh mục, gồm 16.491.360 dòng train và 4.151.040 dòng test. Cả hai tập dùng lưới 15 phút liên tục theo từng trạm. Trong 4.151.040 dòng test có 3.413.981 quan trắc DO. Bản chạy ngày 28/11/2026 dùng mã `41d26fb`, Spark `local[4]` trên một máy cloud, đọc Parquet trên đĩa, mất khoảng 41 giây cho lệnh benchmark. Các bảng dưới lấy trung bình số học của ba seed. Trong từng seed, mỗi cặp dự báo–quan trắc đóng góp như nhau vào chỉ số gộp. [CSV tổng hợp 36 dòng](tables/ridge-scenarios-test.csv) · [CSV theo trạm 8.460 dòng](../../data/report/ridge-scenarios-test-stations.csv) · [Kiểm kê Silver](tables/ridge-scenarios-input-stations.csv)
+
+| Khoảng dự báo | Độ phủ gốc | Độ phủ sau che, để trống | Độ phủ sau che, điền LOCF | Tăng so với để trống (điểm %) | Dự báo thêm mỗi seed (TB) |
+|---|---:|---:|---:|---:|---:|
+| 1 giờ | 98,05% | 74,98% | 99,50% | 24,52 | 179.074 |
+| 3 giờ | 97,94% | 72,90% | 99,50% | 26,60 | 194.181 |
+| 6 giờ | 97,87% | 70,71% | 99,49% | 28,78 | 209.976 |
+| 24 giờ | 97,74% | 69,40% | 99,44% | 30,04 | 218.470 |
+
+Tại mỗi khoảng và seed, dữ liệu gốc và dữ liệu che để trống đều cho dự báo chấm được ở 227 trạm. LOCF đưa con số này lên 228. So với 229 trạm ở benchmark 15 phút, trạm `USGS-07380249` chỉ có DO test ở phút 15 và 45 nên thiếu đích để chấm vào đầu giờ. Riêng `USGS-444306122144600` có đích đầu giờ, nhưng chỉ đủ lịch sử để dự báo sau khi điền LOCF. LOCF cũng điền các khoảng thiếu tự nhiên trong lịch sử, nên độ phủ có thể vượt kịch bản gốc. [Kết quả từng trạm](../../data/report/ridge-scenarios-test-stations.csv)
+
+**Sai số trên tất cả dự báo chấm được của từng kịch bản (MAE / RMSE, mg/L)**
+
+| Khoảng dự báo | Gốc | Sau che, để trống | Sau che, điền LOCF |
+|---|---:|---:|---:|
+| 1 giờ | 0,1136 / 0,2323 | 0,1138 / 0,2305 | 0,1289 / 0,2738 |
+| 3 giờ | 0,1984 / 0,3785 | 0,1983 / 0,3749 | 0,2275 / 0,4398 |
+| 6 giờ | 0,2676 / 0,4909 | 0,2670 / 0,4859 | 0,3019 / 0,5566 |
+| 24 giờ | 0,3427 / 0,5998 | 0,3410 / 0,5956 | 0,3703 / 0,6529 |
+
+Mỗi cột trên chấm cả những thời điểm riêng mà kịch bản đó phát được dự báo. Để so chất lượng trên cùng thời điểm, bảng dưới dùng hai nhóm mốc đối chiếu.
+
+| Khoảng dự báo | Mốc khôi phục so được với gốc mỗi seed (TB) | RMSE gốc trên các mốc này | RMSE LOCF trên các mốc này | MAE LOCF trên các mốc này | RMSE trên mốc chung cả ba |
+|---|---:|---:|---:|---:|---:|
+| 1 giờ | 168.430 | 0,2378 | 0,3632 | 0,1692 | 0,2305 |
+| 3 giờ | 182.779 | 0,3889 | 0,5633 | 0,2984 | 0,3749 |
+| 6 giờ | 198.063 | 0,5035 | 0,6781 | 0,3768 | 0,4859 |
+| 24 giờ | 205.990 | 0,6101 | 0,7373 | 0,4253 | 0,5956 |
+
+Các sai số có đơn vị mg/L. “Dự báo thêm” đếm mọi mốc LOCF phát được mà kịch bản để trống bỏ qua. Bảng sai số xét phần trong số đó mà lịch sử gốc cũng phát được dự báo để có cùng trạm, mô hình và thời điểm đối chiếu. Số mốc được làm tròn đến đơn vị sau khi lấy trung bình ba seed.
+
+**Kết luận.** Lợi ích đo được của LOCF là tăng độ phủ ở cả bốn khoảng, mạnh nhất ở 24 giờ (+30,04 điểm phần trăm). Ở các mốc cả ba cùng dự báo được, các đặc trưng Ridge giống nhau và sai số cũng bằng nhau. Ở các mốc khôi phục so được với lịch sử gốc, dùng LOCF cho RMSE cao hơn lịch sử gốc ở cả bốn khoảng. Ở 24 giờ, cặp RMSE tương ứng là 0,7373 và 0,6101 mg/L. [Kết quả theo seed](tables/ridge-scenarios-test.csv)
+
+![Độ phủ dự báo và RMSE theo khoảng dự báo khi che thêm 20% DO](../images/ridge-scenarios-235.png)
+
+### Tái lập trên cụm HDFS và Spark
+
+Lệnh dưới đây dùng Silver trong cấu hình `.env.bigdata` và hai Spark worker của cụm. Kết quả gộp được ghi vào `docs/report/tables/ridge-scenarios-test.csv`, kết quả từng trạm vào `data/report/ridge-scenarios-test-stations.csv`.
 
 ```powershell
 docker compose --env-file .env.bigdata run --rm --no-deps data-init python -m benchmarks.bench_forecast_scenarios --master spark://spark-master:7077
