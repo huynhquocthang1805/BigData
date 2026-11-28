@@ -179,3 +179,16 @@ Trên cửa sổ ba ngày cuối test, bộ kiểm tra nạp mô hình, điền 
 | Đợt 2 | 192 | 1,84 / 2,01 giây | 0,54 giây |
 
 p50/p95 tính riêng cho mỗi đợt, từ thời điểm producer gửi đến khi ghi xong quan trắc trong PostgreSQL. Sau thời điểm này, phần ML đọc lịch sử, điền khuyết, dự báo và ghi kết quả. Phép thử có hai trạm và hai micro-batch có dữ liệu, phục vụ kiểm tra tích hợp. Số đo tải lớn của hệ thống được ghi riêng trong chương hiệu năng. [CSV độ trễ](tables/ridge-stream-latency.csv)
+
+### Đối chiếu dự báo API với quan trắc ngày 04/07/2025
+
+Tại trạm Connecticut River ở Thompsonville (`USGS-01184000`), bốn dự báo mà API trả về có cùng mốc phát 23:45 UTC ngày 03/07/2025, tính từ `target_ts` trừ `horizon_min`. Bảng ghép từng giá trị `y_pred` với quan trắc `dissolved_oxygen` trong bản xuất Silver theo đúng mã trạm và thời điểm đích. Cả bốn mốc đều có quan trắc.
+
+| Khoảng dự báo | Giờ đích ngày 04/07 (UTC) | DO dự báo (mg/L) | DO quan trắc (mg/L) | Sai số tuyệt đối (mg/L) |
+|---|---|---:|---:|---:|
+| 1 giờ | 00:45 | 8,5032 | 8,5 | 0,0032 |
+| 3 giờ | 02:45 | 8,3769 | 8,1 | 0,2769 |
+| 6 giờ | 05:45 | 8,0772 | 7,7 | 0,3772 |
+| 24 giờ | 23:45 | 8,6480 | 8,8 | 0,1520 |
+
+Trong lần phát này, sai số tuyệt đối lớn nhất ở mốc 6 giờ. Các lần gọi API lặp lại với cùng mốc phát và cùng bốn giá trị chỉ được tính một lần. Chất lượng chung của Ridge được đánh giá trên toàn tập test tháng 7–12/2025 ở bảng 229 trạm phía trên. [CSV đối chiếu bốn quan trắc](tables/forecast-01184000-2025-07-04.csv)
