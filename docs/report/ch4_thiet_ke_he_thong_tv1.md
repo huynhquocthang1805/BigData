@@ -89,7 +89,7 @@ truy vấn theo khoảng thời gian, vừa là điều kiện cho upsert idempo
 FastAPI cung cấp 12 endpoint (tài liệu OpenAPI tự sinh tại `/docs`): danh sách trạm và giá trị mới nhất, chuỗi
 thời gian thô/đã điền khuyết, tổng hợp theo giờ, dự báo mới nhất, chuỗi dự báo kèm giá trị thực, **độ chính xác
 trực tuyến** (MAE/RMSE theo mô hình × tầm dự báo, tính bằng cách nối dự báo với giá trị thực đến sau), dự báo theo
-yêu cầu, cảnh báo và số liệu vận hành. Dashboard Streamlit gồm 4 tab: Giám sát, Dự báo, Cảnh báo, Pipeline
+yêu cầu, cảnh báo và số liệu vận hành. Dashboard Streamlit có năm mục Giám sát, Dự báo, Cảnh báo, Pipeline và Mô hình. Mục Mô hình đọc các bảng benchmark và cho phép huấn luyện, đánh giá trên Silver của từng trạm
 (Hình 4.x — `docs/images/dashboard_monitoring.png`, `dashboard_forecast.png`, `dashboard_pipeline.png`, `api_docs.png`, `spark_master_ui.png`; chế độ Big Data: `dashboard_bigdata.png`, bản đồ
 tô xanh các trạm đã có dữ liệu, thanh bên lọc chỉ các trạm đó).
 

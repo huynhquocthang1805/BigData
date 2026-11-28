@@ -37,7 +37,7 @@ docker compose ps
 
 | Địa chỉ | Nội dung |
 |---|---|
-| http://localhost:8501 | Dashboard giám sát / dự báo / cảnh báo / pipeline |
+| http://localhost:8501 | WaterScope · Giám sát, Dự báo, Cảnh báo, Pipeline và Mô hình |
 | http://localhost:8000/docs | REST API (Swagger) |
 | http://localhost:8080 | Spark Master UI (2 worker) |
 | http://localhost:4040 | Spark UI của ứng dụng streaming (tab Structured Streaming) |
@@ -55,7 +55,9 @@ Bật thêm HDFS (1 NameNode + 2 DataNode, http://localhost:9870), tải 235 tr�
 chạy ETL trên cụm Spark, streaming đặt checkpoint trên HDFS. Cần Docker ≥ 6 CPU / 12 GB RAM; lần tải đầu mất lâu
 do giới hạn tốc độ của API USGS (script tự tiếp tục từ chỗ dừng). Chi tiết: [`docs/architecture.md`](docs/architecture.md).
 
-![Dashboard giám sát](docs/images/dashboard_monitoring.png)
+Trong WaterScope, chọn trạm ở thanh bên rồi mở **Dự báo → Dự báo ngay** để xem DO ở 1, 3, 6 và 24 giờ. Mục **Mô hình** hiển thị các benchmark đã lưu trong `data/report`. Ở **Huấn luyện theo trạm**, chọn bài toán và tập đánh giá để chạy trên Silver, sau đó tải bảng sai số hoặc mô hình.
+
+![WaterScope giám sát trạm Connecticut River tại Thompsonville](docs/images/dashboard_monitoring.png)
 
 ## Kết quả nổi bật (máy thử 4 vCPU — xem [`benchmarks/README.md`](benchmarks/README.md))
 

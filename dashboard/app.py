@@ -1,193 +1,287 @@
-"""Dashboard giám sát chất lượng nước (Streamlit). Chỉ gọi REST API, không truy cập DB trực tiếp.
-
-Chạy: streamlit run dashboard/app.py   (biến WQ_API_URL, mặc định http://localhost:8000)
-TV2 mở rộng phần "Giám sát" (WQI, thống kê, bản đồ); TV3/TV4 bổ sung biểu đồ so sánh mô hình.
-"""
+"""WaterScope — monitoring, on-demand DO forecasts and station experiments."""
 from __future__ import annotations
 
+from html import escape
+import json
 import os
+from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
 import requests
 import streamlit as st
 
-API = os.getenv("WQ_API_URL", "http://localhost:8000")
-COLORS = {"raw": "#1f77b4", "imputed": "#ff7f0e", "forecast": "#2ca02c", "threshold": "#d62728"}
+from dashboard.design import COLORS, PAGES, brand, chart, hero, icon, metrics, panel_title, station_map, stylesheet, timestamp
+from dashboard.lab_view import show_lab
+from wq.config import get_settings
 
-st.set_page_config(page_title="Water Quality Monitoring", page_icon="💧", layout="wide")
+API = os.getenv("WQ_API_URL", "http://localhost:8000")
+st.set_page_config(page_title="WaterScope · Quan trắc USGS", page_icon="💧", layout="wide")
+st.markdown(stylesheet(), unsafe_allow_html=True)
+brand()
+page = st.sidebar.radio("Điều hướng", list(PAGES), label_visibility="collapsed", key="navigation", width="stretch")
 
 
 @st.cache_data(ttl=5, show_spinner=False)
-def api(path: str, **params):
-    r = requests.get(f"{API}{path}", params={k: v for k, v in params.items() if v is not None}, timeout=60)
-    r.raise_for_status()
-    return r.json()
+def api(path, **params):
+    response = requests.get(API + path, params=params, timeout=(4, 60))
+    response.raise_for_status()
+    return response.json()
 
 
-def frame(rows, time_cols=("ts",)) -> pd.DataFrame:
+def frame(rows, *time_cols):
     df = pd.DataFrame(rows)
-    for c in time_cols:
-        if c in df.columns:
-            df[c] = pd.to_datetime(df[c], utc=True)
+    for col in time_cols:
+        if col in df:
+            df[col] = pd.to_datetime(df[col], utc=True)
     return df
 
 
-try:
-    meta = api("/meta")
-    stations = frame(api("/stations"), ("last_ts",))
-except requests.RequestException as e:
-    st.error(f"Không kết nối được API tại {API}: {e}")
+def number(value):
+    return f"{value:,}".replace(",", ".")
+
+
+def draw(fig, height, unit=None):
+    st.plotly_chart(chart(fig, height, unit), theme=None, width="stretch",
+                    config={"displaylogo": False, "scrollZoom": False})
+
+
+if page == "Mô hình":
+    catalog = Path(get_settings().stations_file)
+    if not catalog.is_file():
+        catalog = Path("config/stations_large.json")
+    catalog_rows = json.loads(catalog.read_text(encoding="utf-8"))["stations"]
+    hero(page, "So sánh sai số, huấn luyện theo trạm và xuất kết quả.", "Silver · USGS")
+    show_lab({row["station_id"]: f"{row['station_id']} · {row['name']}" for row in catalog_rows},
+             st.session_state.get("selected_station", st.query_params.get("station")))
     st.stop()
 
-var_info = {v["name"]: v for v in meta["variables"]}
+try:
+    meta = api("/meta")
+    stations = frame(api("/stations"), "last_ts")
+except requests.RequestException:
+    hero(page, "Dịch vụ quan trắc", "API chưa kết nối")
+    st.warning("Chưa kết nối được API quan trắc. Bạn vẫn có thể mở Mô hình để xem benchmark và huấn luyện.")
+    if st.button("Thử kết nối lại"):
+        st.rerun()
+    st.stop()
 
-# ------------------------------------------------------------------ Sidebar
-st.sidebar.header("Bộ lọc")
-# Chế độ Big Data nạp 235 trạm vào bảng stations nhưng chỉ một phần đã có dữ liệu: mặc định chỉ liệt kê các trạm đó
-has_data = stations["last_ts"].notna() if "last_ts" in stations else pd.Series(False, index=stations.index)
-only_active = st.sidebar.toggle("Chỉ hiện trạm đã có dữ liệu", value=bool(has_data.any()))
-listed = stations[has_data] if only_active and has_data.any() else stations
-st.sidebar.caption(f"{int(has_data.sum())}/{len(stations)} trạm đã có dữ liệu")
-station_labels = {r.station_id: f"{r.station_id} – {r['name']}" for _, r in listed.iterrows()}
-# Cho phép mở thẳng bằng link: ?station=USGS-07020850&param=turbidity&days=7
-qp = st.query_params
-ids = list(station_labels)
-station_id = st.sidebar.selectbox("Trạm", ids, index=ids.index(qp["station"]) if qp.get("station") in ids else 0,
-                                  format_func=station_labels.get)
-params = list(var_info)
-parameter = st.sidebar.selectbox("Thông số", params,
-                                 index=params.index(qp.get("param", "dissolved_oxygen")) if qp.get("param", "dissolved_oxygen") in params else 0,
-                                 format_func=lambda v: f"{var_info[v]['label']} ({var_info[v]['unit']})")
-days = st.sidebar.slider("Cửa sổ thời gian (ngày dữ liệu)", 1, 30, int(qp.get("days", 3)) if str(qp.get("days", "3")).isdigit() else 3)
-auto = st.sidebar.toggle("Tự làm mới mỗi 10 giây", value=True)
-st.sidebar.caption(f"API: {API}")
+info = {v["name"]: v for v in meta["variables"]}
+has_data = stations["last_ts"].notna() if not stations.empty else pd.Series(dtype=bool)
+station_id = None
+auto = st.sidebar.toggle("Tự làm mới mỗi 10 giây", value=True, key="auto_refresh")
+
+if page in ("Giám sát", "Dự báo"):
+    if stations.empty:
+        hero(page, "Mạng lưới quan trắc USGS", "API kết nối", True)
+        st.info("Danh mục trạm đang trống. Hãy kiểm tra bước nạp danh mục trong stream-processor.")
+        st.stop()
+    st.sidebar.markdown(f'<div class="wq-filter-title">{icon("adjustments-horizontal")} Bộ lọc trạm</div>',
+                        unsafe_allow_html=True)
+    preferred = st.session_state.get("selected_station", st.query_params.get("station"))
+    active_ids = set(stations.loc[has_data, "station_id"])
+    only_active = st.sidebar.toggle("Chỉ trạm có dữ liệu", value=bool(active_ids) and
+                                    (preferred is None or preferred in active_ids), key="only_active")
+    listed = stations[has_data] if only_active else stations
+    labels = {r.station_id: f"{r.station_id} · {r['name']}" for _, r in listed.iterrows()}
+    ids = list(labels)
+    station_id = st.sidebar.selectbox("Trạm quan trắc", ids, format_func=labels.get,
+                                      index=ids.index(preferred) if preferred in ids else 0)
+    if not station_id:
+        st.info("Bộ lọc hiện tại chưa có trạm. Tắt “Chỉ trạm có dữ liệu” để xem danh mục.")
+        st.stop()
+    st.session_state["selected_station"] = station_id
+    station = stations.loc[stations.station_id == station_id].iloc[0]
+    param_keys = list(info)
+    default_param = st.session_state.get("selected_param", st.query_params.get("param", "dissolved_oxygen"))
+    parameter = default_param if default_param in info else param_keys[0]
+    if page == "Giám sát":
+        parameter = st.sidebar.selectbox("Thông số", param_keys, index=param_keys.index(parameter),
+                                         format_func=lambda v: info[v]["label"])
+        st.session_state["selected_param"] = parameter
+    try:
+        default_days = min(30, max(1, int(st.session_state.get("selected_days", st.query_params.get("days", 3)))))
+    except ValueError:
+        default_days = 3
+    days = st.sidebar.slider("Số ngày dữ liệu", 1, 30, default_days)
+    st.session_state["selected_days"] = days
+    st.sidebar.caption(f"{int(has_data.sum())} / {len(stations)} trạm đã có dữ liệu")
+    page_detail = str(station["name"])
+else:
+    page_detail = {"Cảnh báo": "Các lần vượt ngưỡng ghi nhận trên toàn mạng lưới.",
+                   "Pipeline": "Theo dõi độ trễ và thông lượng các micro-batch của Spark."}[page]
+
+hero(page, page_detail, "API kết nối", True, station_id)
+
+
+def show_monitor(stations, station):
+    raw = frame(api("/measurements", station_id=station_id, days=days, source="raw"), "ts")
+    imp = frame(api("/measurements", station_id=station_id, days=days, source="imputed"), "ts")
+    pred = pd.DataFrame()
+    if parameter in meta["forecast_targets"]:
+        pred = frame(api("/predictions/latest", station_id=station_id, target=parameter), "issued_at", "target_ts")
+    left, right = st.columns([1.8, 1], gap="medium")
+    with left.container(border=True, key="card_trend"):
+        label, unit = info[parameter]["label"], info[parameter]["unit"]
+        panel_title("Diễn biến quan trắc", f"{label} · {days} ngày dữ liệu · UTC")
+        if raw.empty and imp.empty and pred.empty:
+            st.info("Chưa có số đo trong cửa sổ đã chọn.")
+        else:
+            fig = go.Figure()
+            if not raw.empty:
+                grid = pd.date_range(raw.ts.min(), raw.ts.max(), freq=f"{meta['freq_minutes']}min")
+                series = raw.set_index("ts")[parameter].reindex(grid)
+                fig.add_trace(go.Scatter(x=grid, y=series, name="Quan trắc", mode="lines",
+                                         line=dict(color=COLORS["raw"], width=2.8), connectgaps=False))
+            if not imp.empty:
+                bit = 1 << list(info).index(parameter)
+                filled = imp[(imp.imputed_mask & bit) > 0]
+                fig.add_trace(go.Scatter(x=imp.ts, y=imp[parameter], name="Sau điền khuyết", mode="lines",
+                                         line=dict(color=COLORS["imputed"], dash="dot", width=1.3)))
+                if not filled.empty:
+                    fig.add_trace(go.Scatter(x=filled.ts, y=filled[parameter], name="Điểm được điền", mode="markers",
+                                             marker=dict(color=COLORS["imputed"], size=6)))
+            if not pred.empty:
+                for model, group in pred.groupby("model"):
+                    fig.add_trace(go.Scatter(x=group.target_ts, y=group.y_pred, name=f"Dự báo {model}",
+                                             mode="lines+markers", line=dict(color=COLORS["forecast"])))
+            for rule in meta["alert_rules"]:
+                if rule["parameter"] == parameter:
+                    fig.add_hline(y=rule["threshold"], line=dict(color=COLORS["threshold"], dash="dot", width=1),
+                                  annotation_text=rule["rule"], annotation_position="top left")
+            draw(fig, 325, unit)
+    with right.container(border=True, key="card_map"):
+        panel_title("Mạng lưới trạm", f"{number(len(stations))} trạm trong danh mục")
+        station_map(stations, station_id)
+        st.markdown('<div class="wq-map-key"><span><i style="background:#f57f34"></i>Đang chọn</span>'
+                    '<span><i style="background:#116ee2"></i>Có dữ liệu</span>'
+                    '<span><i style="background:#93a8b8"></i>Chưa có dữ liệu</span></div>', unsafe_allow_html=True)
+        active = int(stations.last_ts.notna().sum())
+        st.progress(active / len(stations), text=f"{active} / {len(stations)} trạm có quan trắc")
+    with st.container(border=True, key="card_latest"):
+        panel_title("Số đo gần nhất", f"{station_id} · {timestamp(station.last_ts)}")
+        readings = []
+        for var, item in info.items():
+            value = station.get(var)
+            reading = f"{value:.2f} {escape(item['unit'])}" if pd.notna(value) else "—"
+            readings.append(f'<div><span>{escape(item["label"])}</span><b>{reading}</b></div>')
+        st.markdown('<div class="wq-sensors">' + "".join(readings) + "</div>", unsafe_allow_html=True)
+    hourly = frame(api("/measurements/hourly", station_id=station_id, parameter=parameter, days=days), "window_start")
+    if not hourly.empty:
+        avg, missing = st.columns(2)
+        with avg.container(border=True, key="card_avg"):
+            panel_title("Trung bình theo giờ", label)
+            draw(go.Figure(go.Scatter(x=hourly.window_start, y=hourly.avg_value, mode="lines",
+                                      line=dict(color=COLORS["raw"]))), 205, unit)
+        with missing.container(border=True, key="card_gaps"):
+            panel_title("Tỷ lệ thiếu theo giờ", label)
+            fig = go.Figure(go.Bar(x=hourly.window_start, y=hourly.missing_rate*100, marker_color=COLORS["imputed"]))
+            fig.update_yaxes(range=[0, 100])
+            draw(fig, 205, "%")
+
+
+def show_forecast(station):
+    target = meta["forecast_targets"][0]
+    with st.container(border=True, key="card_demand"):
+        panel_title("Dự báo tại trạm", f"Lịch sử gần nhất · {timestamp(station.last_ts)}")
+        if st.button("Dự báo ngay", type="primary", disabled=pd.isna(station.last_ts)):
+            st.session_state.pop("station_forecast", None)
+            with st.spinner("Đang tính dự báo…"):
+                result = api(f"/stations/{station_id}/forecast")
+            st.session_state["station_forecast"] = (station_id, result)
+        saved_station, result = st.session_state.get("station_forecast", (None, None))
+        if saved_station == station_id:
+            live = frame(result["predictions"], "issued_at", "target_ts")
+            st.caption(f"{result['forecaster']} · {result['imputer']} · {result['history_points']} điểm lịch sử")
+            if live.empty:
+                st.info("Mô hình cần thêm lịch sử DO để dự báo cho trạm.")
+            else:
+                tiles = [("clock", f"Sau {int(row.horizon_min)//60} giờ", f"{row.y_pred:.3f} mg/L",
+                          timestamp(row.target_ts), "teal") for row in live.sort_values("horizon_min").itertuples()]
+                metrics(tiles)
+        elif pd.isna(station.last_ts):
+            st.info("Trạm này chưa có số đo để lập dự báo.")
+    with st.container(border=True, key="card_forecast_history"):
+        panel_title("Dự báo và quan trắc", f"{station_id} · {days} ngày dữ liệu")
+        horizons = meta["forecast_horizons_min"]
+        h = st.radio("Khoảng dự báo", horizons, horizontal=True, format_func=lambda m: f"{m//60} giờ")
+        history = frame(api("/predictions", station_id=station_id, target=target, horizon_min=h, days=days),
+                        "issued_at", "target_ts")
+        if history.empty:
+            st.info("Chưa có dự báo do luồng streaming ghi trong khoảng đã chọn.")
+        else:
+            fig = go.Figure()
+            obs = history.dropna(subset=["y_true"]).drop_duplicates("target_ts")
+            fig.add_trace(go.Scatter(x=obs.target_ts, y=obs.y_true, name="Quan trắc", mode="lines+markers"))
+            for model, g in history.groupby("model"):
+                fig.add_trace(go.Scatter(x=g.target_ts, y=g.y_pred, name=model, mode="markers"))
+            draw(fig, 285, "mg/L")
+    with st.container(border=True, key="card_accuracy"):
+        panel_title("Sai số dự báo trực tuyến", "So với quan trắc nhận được sau khi phát dự báo")
+        scores = pd.DataFrame(api("/predictions/accuracy", station_id=station_id, target=target))
+        if scores.empty:
+            st.info("Chưa có cặp dự báo và quan trắc để chấm.")
+        else:
+            st.dataframe(scores, hide_index=True, width="stretch")
+
+
+def show_pipeline(pm):
+    latency = frame(pm["latency"], "recorded_at")
+    progress = frame(pm["progress"], "recorded_at")
+    with st.container(border=True, key="card_latency"):
+        panel_title("Độ trễ từ producer đến PostgreSQL", "Theo thời điểm ghi nhận micro-batch · UTC")
+        if latency.empty:
+            st.info("Chưa có số đo độ trễ.")
+        else:
+            fig = go.Figure([go.Scatter(x=latency.recorded_at, y=latency[col]/1000, name=name, mode="lines+markers")
+                             for col, name in [("latency_p50_ms", "p50"), ("latency_p95_ms", "p95")]])
+            draw(fig, 240, "giây")
+    with st.container(border=True, key="card_throughput"):
+        panel_title("Thông lượng theo truy vấn Spark")
+        if progress.empty:
+            st.info("Chưa có micro-batch được ghi nhận.")
+        else:
+            fig = go.Figure([go.Scatter(x=g.recorded_at, y=g.processed_rows_per_sec, name=name, mode="lines+markers")
+                             for name, g in progress.groupby("query_name")])
+            draw(fig, 240, "dòng/s")
 
 
 @st.fragment(run_every="10s" if auto else None)
 def main_view():
-    st.title("💧 Water Quality Monitoring, Imputation & Prediction")
-    pm = api("/pipeline/metrics", limit=300)
-    tot, lat = pm["totals"], pm["latency"]
-    c = st.columns(5)
-    c[0].metric("Bản ghi đã xử lý", f"{tot['measurements']:,}")
-    c[1].metric("Giá trị được điền khuyết", f"{tot['imputed_rows']:,}")
-    c[2].metric("Dự báo đã phát hành", f"{tot['predictions']:,}")
-    c[3].metric("Cảnh báo", f"{tot['alerts']:,}")
-    c[4].metric("Độ trễ p95 (batch gần nhất)", f"{lat[-1]['latency_p95_ms'] / 1000:.1f} s" if lat else "–")
-    st.caption(f"Thời điểm dữ liệu mới nhất (event time): {tot['max_event_time'] or '–'}")
-
-    tab_mon, tab_pred, tab_alert, tab_pipe = st.tabs(["Giám sát", "Dự báo", "Cảnh báo", "Pipeline"])
-
-    with tab_mon:
-        left, right = st.columns([2, 1])
-        with right:
-            st.subheader("Trạm quan trắc")
-            pts = stations.dropna(subset=["latitude", "longitude"]).copy()
-            pts["color"] = pts["last_ts"].notna().map({True: "#0B6E78", False: "#9AA9AE"})  # xanh: có dữ liệu
-            st.map(pts, latitude="latitude", longitude="longitude", size=20000, color="color")
-            row = stations[stations.station_id == station_id].iloc[0]
-            st.dataframe(pd.DataFrame({"Thông số": [var_info[v]["label"] for v in var_info],
-                                       "Giá trị mới nhất": [row.get(v) for v in var_info],
-                                       "Đơn vị": [var_info[v]["unit"] for v in var_info]}),
-                         hide_index=True, width="stretch")
-        with left:
-            raw = frame(api("/measurements", station_id=station_id, days=days, source="raw"))
-            imp = frame(api("/measurements", station_id=station_id, days=days, source="imputed"))
-            st.subheader(f"{var_info[parameter]['label']} – {station_labels[station_id]}")
-            fig = go.Figure()
-            if not imp.empty:
-                fig.add_trace(go.Scatter(x=imp.ts, y=imp[parameter], name="Sau điền khuyết", mode="lines",
-                                         line=dict(color=COLORS["imputed"], dash="dot")))
-                bit = 1 << list(var_info).index(parameter)
-                filled = imp[(imp.imputed_mask & bit) > 0]
-                fig.add_trace(go.Scatter(x=filled.ts, y=filled[parameter], name="Điểm được điền", mode="markers",
-                                         marker=dict(color=COLORS["imputed"], size=6)))
-            if not raw.empty:
-                # Đưa về lưới 15 phút để KHOẢNG TRỐNG hiện ra là chỗ đứt (không nối thẳng qua chỗ thiếu)
-                grid = pd.date_range(raw.ts.min(), raw.ts.max(), freq=f"{meta['freq_minutes']}min")
-                raw = raw.set_index("ts").reindex(grid).rename_axis("ts").reset_index()
-                fig.add_trace(go.Scatter(x=raw.ts, y=raw[parameter], name="Quan trắc (đã QC)", mode="lines",
-                                         line=dict(color=COLORS["raw"]), connectgaps=False))
-            if parameter in meta["forecast_targets"]:
-                pred = frame(api("/predictions/latest", station_id=station_id, target=parameter),
-                             ("issued_at", "target_ts"))
-                for model, g in (pred.groupby("model") if not pred.empty else []):
-                    fig.add_trace(go.Scatter(x=g.target_ts, y=g.y_pred, name=f"Dự báo ({model})",
-                                             mode="lines+markers", line=dict(color=COLORS["forecast"])))
-            for rule in meta["alert_rules"]:
-                if rule["parameter"] == parameter:
-                    fig.add_hline(y=rule["threshold"], line=dict(color=COLORS["threshold"], dash="dash", width=1),
-                                  annotation_text=rule["rule"], annotation_position="top left")
-            fig.update_layout(height=420, margin=dict(l=10, r=10, t=30, b=10), hovermode="x unified",
-                              yaxis_title=var_info[parameter]["unit"], legend=dict(orientation="h", y=-0.15))
-            st.plotly_chart(fig, width="stretch")
-            hourly = frame(api("/measurements/hourly", station_id=station_id, parameter=parameter, days=days),
-                           ("window_start", "window_end"))
-            if not hourly.empty:
-                st.caption("Tổng hợp theo giờ do Spark tính (window 1h + watermark)")
-                h1, h2 = st.columns(2)
-                fig_avg = go.Figure(go.Scatter(x=hourly.window_start, y=hourly.avg_value, mode="lines",
-                                               line=dict(color=COLORS["raw"], width=2)))
-                fig_avg.update_layout(title="Trung bình theo giờ", height=240, margin=dict(l=10, r=10, t=40, b=10),
-                                      yaxis_title=var_info[parameter]["unit"])
-                h1.plotly_chart(fig_avg, width="stretch")
-                fig_miss = go.Figure(go.Bar(x=hourly.window_start, y=hourly.missing_rate * 100,
-                                            marker_color=COLORS["imputed"]))
-                fig_miss.update_layout(title="Tỉ lệ thiếu theo giờ (%)", height=240, margin=dict(l=10, r=10, t=40, b=10),
-                                       yaxis=dict(range=[0, 100], title="%"))
-                h2.plotly_chart(fig_miss, width="stretch")
-
-    with tab_pred:
-        target = meta["forecast_targets"][0]
-        horizons = meta["forecast_horizons_min"]
-        h = st.select_slider("Horizon (phút)", horizons, value=horizons[0])
-        pr = frame(api("/predictions", station_id=station_id, target=target, horizon_min=h, days=days),
-                   ("target_ts", "issued_at"))
-        if pr.empty:
-            st.info("Chưa có dự báo cho trạm này.")
+    try:
+        pm = api("/pipeline/metrics", limit=300)
+        totals, latency = pm["totals"], pm["latency"]
+        p95 = latency[-1].get("latency_p95_ms") if latency else None
+        metrics([
+            ("database", "Bản ghi quan trắc", number(totals["measurements"]), "Toàn mạng lưới", "blue"),
+            ("stack-2", "Sau điền khuyết", number(totals["imputed_rows"]), "Dòng đã ghi", "teal"),
+            ("chart-line", "Dự báo đã phát", number(totals["predictions"]), "Từ luồng streaming", "violet"),
+            ("bell", "Cảnh báo", number(totals["alerts"]), "Lượt vượt ngưỡng", "amber"),
+        ])
+        if page in ("Giám sát", "Dự báo"):
+            current_stations = frame(api("/stations"), "last_ts")
+            selected = current_stations.loc[current_stations.get("station_id", pd.Series(dtype=str)) == station_id]
+            if selected.empty:
+                st.info("Trạm vừa thay đổi trong danh mục. Hãy chọn lại trạm.")
+            elif page == "Giám sát":
+                show_monitor(current_stations, selected.iloc[0])
+            else:
+                show_forecast(selected.iloc[0])
+        elif page == "Pipeline":
+            st.caption(f"Quan trắc mới nhất · {timestamp(totals['max_event_time'])}   |   "
+                       + (f"Độ trễ p95 batch gần nhất · {p95/1000:.2f} s" if p95 is not None else "Chưa có độ trễ p95"))
+            show_pipeline(pm)
         else:
-            fig = go.Figure()
-            obs = pr.dropna(subset=["y_true"]).drop_duplicates("target_ts")
-            fig.add_trace(go.Scatter(x=obs.target_ts, y=obs.y_true, name="Thực tế", mode="lines",
-                                     line=dict(color=COLORS["raw"])))
-            for model, g in pr.groupby("model"):
-                fig.add_trace(go.Scatter(x=g.target_ts, y=g.y_pred, name=f"Dự báo {model} (+{h} phút)",
-                                         mode="markers", marker=dict(color=COLORS["forecast"], size=6)))
-            fig.update_layout(height=380, margin=dict(l=10, r=10, t=30, b=10), hovermode="x unified")
-            st.plotly_chart(fig, width="stretch")
-        acc = pd.DataFrame(api("/predictions/accuracy", target=target, station_id=station_id))
-        st.subheader("Độ chính xác online (so với giá trị thực đến sau)")
-        st.dataframe(acc, hide_index=True, width="stretch")
-        if st.button("Dự báo ngay (on-demand qua API)"):
-            res = api(f"/stations/{station_id}/forecast")
-            st.json(res, expanded=False)
-
-    with tab_alert:
-        al = frame(api("/alerts", station_id=None, limit=500), ("ts", "created_at"))
-        if al.empty:
-            st.success("Không có cảnh báo.")
-        else:
-            st.dataframe(al[["ts", "station_id", "parameter", "value", "threshold", "rule", "severity", "message"]],
-                         hide_index=True, width="stretch")
-
-    with tab_pipe:
-        latency = frame(lat, ("recorded_at", "max_event_time"))
-        prog = frame(pm["progress"], ("recorded_at", "watermark"))
-        if latency.empty:
-            st.info("Chưa có số liệu pipeline.")
-        else:
-            st.subheader("Độ trễ end-to-end (producer → PostgreSQL)")
-            fig = go.Figure([go.Scatter(x=latency.recorded_at, y=latency[c] / 1000, name=c, mode="lines")
-                             for c in ["latency_p50_ms", "latency_p95_ms"]])
-            fig.update_layout(height=280, yaxis_title="giây", margin=dict(l=10, r=10, t=10, b=10))
-            st.plotly_chart(fig, width="stretch")
-        if not prog.empty:
-            st.subheader("Throughput theo micro-batch (StreamingQueryListener)")
-            fig = go.Figure([go.Scatter(x=g.recorded_at, y=g.processed_rows_per_sec, name=q, mode="lines+markers")
-                             for q, g in prog.groupby("query_name")])
-            fig.update_layout(height=280, yaxis_title="rows/s", margin=dict(l=10, r=10, t=10, b=10))
-            st.plotly_chart(fig, width="stretch")
+            with st.container(border=True, key="card_alerts"):
+                panel_title("Nhật ký cảnh báo", "Tối đa 500 cảnh báo mới nhất trên toàn mạng lưới")
+                alerts = frame(api("/alerts", limit=500), "ts", "created_at")
+                if alerts.empty:
+                    st.info("Chưa ghi nhận cảnh báo.")
+                else:
+                    st.dataframe(alerts[["ts", "station_id", "parameter", "value", "threshold", "rule", "severity", "message"]],
+                                 width="stretch", hide_index=True)
+    except requests.RequestException as error:
+        st.error(f"Chưa lấy được dữ liệu từ API. {error}")
 
 
 main_view()
