@@ -28,11 +28,32 @@ Khi HDFS, Kafka, PostgreSQL và Spark đang chạy, áp dụng cấu hình và x
 
 ```powershell
 docker compose --env-file .env.bigdata up -d --wait --wait-timeout 120 --no-deps --force-recreate stream-processor api
-Invoke-RestMethod 'http://127.0.0.1:8000/stations/USGS-01184000/forecast'
-Invoke-RestMethod 'http://127.0.0.1:8000/predictions/latest?station_id=USGS-01184000'
+$base = 'http://127.0.0.1:8000'
+$stations = (Invoke-RestMethod "$base/stations") | Where-Object { $_.last_ts }
+$r = $null
+foreach ($s in $stations) {
+    $r = Invoke-RestMethod "$base/stations/$($s.station_id)/forecast" -ErrorAction Stop
+    if ($r.predictions.Count -eq 4) {
+        $r | Select-Object forecaster, history_points
+        $r.predictions | Format-Table station_id, horizon_min, target_ts, y_pred
+        break
+    }
+}
+if ($null -eq $r -or $r.predictions.Count -ne 4) {
+    Write-Host 'Chưa tìm thấy trạm có đủ lịch sử để dự báo. Kiểm tra producer và stream-processor.'
+}
 ```
 
 Compose đợi đến khi `/health` trả HTTP 200 sau khi truy vấn PostgreSQL thành công. Nếu lệnh hết thời gian chờ, xem `docker compose --env-file .env.bigdata logs --tail 80 api postgres`.
+
+Nếu `/health` trả `ok` và `/stations/{id}/forecast` trả HTTP 404 với “Chưa có dữ liệu cho trạm này”, bảng `measurements` của PostgreSQL chưa có lịch sử cho mã đó. Danh mục 235 trạm và Silver trên HDFS có thể đã đầy đủ. Dùng ví dụ trên để tìm một trạm đang có dữ liệu phục vụ.
+
+Để thử đúng trạm `USGS-01184000` trên luồng replay mới, kiểm tra `stream-processor` đang chạy rồi phát lại lịch sử từ Silver. Trong bộ Silver của nhóm, khoảng dưới đây có 288 quan trắc DO cho trạm này. Nếu luồng đang dùng checkpoint đã xử lý dữ liệu mới hơn khoảng này, kiểm tra watermark của `serving_sink` trước vì Spark có thể loại các bản ghi đến muộn.
+
+```powershell
+docker compose --env-file .env.bigdata run --rm --no-deps producer python -m ingestion.replay_producer --stations USGS-01184000 --start 2025-07-01 --end 2025-07-04 --rate 100
+docker compose --env-file .env.bigdata logs --tail 30 stream-processor
+```
 
 Endpoint theo yêu cầu dùng lịch sử đã có trong PostgreSQL. Dự báo lưu trong `/predictions/latest` xuất hiện khi streaming xử lý bản ghi mới và đã có đủ lịch sử.
 
