@@ -11,7 +11,7 @@ triển khai bằng **Docker Compose**.
 
 ```mermaid
 flowchart LR
-    USGS[(USGS Water Data API<br/>10 trạm, 6 thông số, 15 phút)] -->|download_usgs.py| RAW[/data/raw: CSV/]
+    USGS[(USGS Water Data API<br/>235 trạm, 6 thông số, 15 phút)] -->|download_usgs.py| RAW[/data/raw: CSV/]
     RAW -->|Spark batch ETL| BRONZE[/bronze: Parquet long/] --> SILVER[/silver: Parquet wide, lưới 15'/]
     SILVER -->|train/valid| ML[Imputer TV3<br/>Forecaster TV4]
     SILVER -->|replay_producer.py| KAFKA{{Kafka topic<br/>wq.sensor.raw, 6 partitions}}
@@ -100,8 +100,6 @@ do giới hạn tốc độ của API USGS (script tự tiếp tục từ chỗ 
 
 ## Dữ liệu
 
-USGS Water Data OGC API (`api.waterdata.usgs.gov`, collection `continuous`), 10 trạm sông tại Mỹ,
-2023-01-01 → 2025-12-31, 6 thông số: nhiệt độ nước (00010), độ dẫn điện (00095), pH (00400),
-oxy hòa tan DO (00300), độ đục (63680), lưu lượng (00060). Khoảng **5,96 triệu giá trị đo** thô →
-**1.052.160 dòng** silver (lưới 15 phút). Danh sách trạm: [`config/stations.json`](config/stations.json).
-Chia theo thời gian: train 2023–2024, valid 2025 H1, test 2025 H2 (streaming demo phát lại giai đoạn test).
+Thực nghiệm chính xét 235 trạm USGS giai đoạn 01/2023–12/2025, với khoảng 130 triệu giá trị đo thô và 24.725.760 dòng Silver trên lưới 15 phút. Dữ liệu gồm nhiệt độ nước (00010), độ dẫn điện riêng (00095), pH (00400), oxy hòa tan (00300), độ đục (63680) và lưu lượng (00060). [Danh mục 235 trạm](config/stations_large.json)
+
+Cấu hình Big Data dùng `.env.bigdata`, Spark và HDFS. Chia tập theo thời gian với train 2023–2024, validation nửa đầu 2025 và test nửa cuối 2025. Báo cáo ghi số trạm và số quan trắc chấm được cho từng thí nghiệm. Cấu hình demo mặc định dùng bộ 10 trạm. [Kết quả DO và lệnh chạy ba kịch bản](docs/report/validation_va_test_do.md)

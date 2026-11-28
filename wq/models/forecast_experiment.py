@@ -32,6 +32,25 @@ def _forecast_rows(frame: pd.DataFrame, horizon: int) -> pd.DataFrame:
     return rows.dropna()
 
 
+def history_features(history: pd.Series, horizon: int) -> pd.DataFrame:
+    # Each lookup is at or before issue time. Silver uses a regular 15-minute grid.
+    day = contracts.STEPS_PER_DAY
+    return pd.DataFrame({
+        "persistence": history, "lag_1h": history.shift(4), "lag_3h": history.shift(12),
+        "lag_24h": history.shift(day), "seasonal_naive": history.shift(day - horizon),
+    })[FEATURES]
+
+
+def fit_station_ridges(train: pd.DataFrame) -> dict:
+    """Fit the same four train-only estimators used in the DO benchmarks."""
+    models = {}
+    for horizon in contracts.FORECAST_HORIZONS_STEPS:
+        fit = _forecast_rows(train, horizon)
+        if len(fit) >= 48:
+            models[horizon] = make_pipeline(StandardScaler(), Ridge()).fit(fit[FEATURES], fit["observed"])
+    return models
+
+
 def evaluate_forecast(train: pd.DataFrame, evaluation: pd.DataFrame, *, include_preview: bool = False
                       ) -> tuple[pd.DataFrame, pd.DataFrame | None, dict]:
     scores, previews, estimators = [], [], {}

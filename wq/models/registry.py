@@ -8,9 +8,11 @@ import joblib
 from wq.models.base import BaseForecaster, BaseImputer
 from wq.models.baselines import (LinearInterpolationImputer, LOCFImputer, PersistenceForecaster,
                                  SeasonalNaiveForecaster)
+from wq.models.forecasters_tv4 import RidgeForecaster
 
 BUILTIN_IMPUTERS = {"locf": LOCFImputer, "linear": LinearInterpolationImputer}
-BUILTIN_FORECASTERS = {"persistence": PersistenceForecaster, "seasonal_naive": SeasonalNaiveForecaster}
+BUILTIN_FORECASTERS = {"persistence": PersistenceForecaster, "seasonal_naive": SeasonalNaiveForecaster,
+                       "ridge": RidgeForecaster.from_csv}
 
 
 def _load(spec: str, builtins: dict, base_cls: type):

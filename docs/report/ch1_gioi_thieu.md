@@ -25,7 +25,7 @@ mạng lưới nhiều trạm, nhiều thông số quan trắc.
 1. **Thu thập và xử lý dữ liệu cảm biến liên tục ở quy mô lớn**: dữ liệu lịch sử nhiều năm (xử lý theo lô) và
    dữ liệu mới đến liên tục (xử lý theo luồng), có dữ liệu đến trễ và trùng lặp.
 2. **Dữ liệu thiếu biến động**: tỉ lệ thiếu khác nhau theo trạm, theo thông số và theo thời gian
-   (trong dữ liệu của nhóm, với 5 thông số chất lượng nước: từ 0,1% đến 18,5%).
+   (trong bộ đối chiếu 10 trạm, tỷ lệ thiếu của 5 thông số chất lượng nước dao động từ 0,1% đến 18,5%).
 3. **Dự báo phục vụ cảnh báo sớm**: dự báo DO ở các tầm 1–24 giờ ngay khi dữ liệu mới đến.
 4. **Vận hành ổn định**: hệ thống phải chịu được sự cố mà không mất hay nhân đôi dữ liệu, và có số liệu định
    lượng về hiệu năng.
@@ -43,8 +43,7 @@ mạng lưới nhiều trạm, nhiều thông số quan trắc.
 
 ## 1.4 Phạm vi
 
-- Dữ liệu: USGS Water Data API, 10 trạm sông tại Hoa Kỳ, 01/2023–12/2025, chu kỳ 15 phút, 6 thông số
-  (nhiệt độ nước, độ dẫn điện riêng, pH, DO, độ đục, lưu lượng) — khoảng 5,96 triệu giá trị đo.
+- Phạm vi chính gồm 235 trạm USGS từ tháng 01/2023 đến tháng 12/2025, với khoảng 130 triệu giá trị đo thô và 24.725.760 dòng Silver trên lưới 15 phút. Sáu thông số gồm nhiệt độ nước, độ dẫn điện riêng, pH, DO, độ đục và lưu lượng. Bộ 10 trạm dùng cho các phép thử đối chiếu và demo. [Danh mục 235 trạm](../../config/stations_large.json) · [Kết quả DO](validation_va_test_do.md)
 - Hạ tầng: triển khai bằng Docker Compose (Kafka, Spark standalone 1 master + 2 worker, PostgreSQL, FastAPI,
   Streamlit) trên một máy; kiến trúc được thiết kế để chuyển lên cụm nhiều máy chỉ bằng thay đổi cấu hình.
 - Dữ liệu thời gian thực được **mô phỏng bằng cách phát lại** (replay) giai đoạn kiểm thử 07–12/2025 qua Kafka.

@@ -6,15 +6,12 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import Ridge
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
 
 from wq import contracts
 from wq.config import get_settings
 from wq.evaluation import apply_mask, make_mask
 from wq.models.baselines import LOCFImputer
-from wq.models.forecast_experiment import FEATURES, _forecast_rows
+from wq.models.forecast_experiment import fit_station_ridges, history_features
 from wq.models.imputers_tv3 import KalmanImputer
 from wq.spark_ml import read_silver_sdf, station_seed
 from wq.spark_utils import build_spark
@@ -23,15 +20,6 @@ TARGET = "dissolved_oxygen"
 SCHEMA = ("station_id string, seed long, horizon_min int, n_scored long, "
           "locf_sae double, locf_sse double, kalman_sae double, kalman_sse double")
 COLUMNS = [field.split()[0] for field in SCHEMA.split(", ")]
-
-
-def history_features(history: pd.Series, horizon: int) -> pd.DataFrame:
-    # Each lookup is at or before issue time. Silver uses a regular 15-minute grid.
-    day = contracts.STEPS_PER_DAY
-    return pd.DataFrame({
-        "persistence": history, "lag_1h": history.shift(4), "lag_3h": history.shift(12),
-        "lag_24h": history.shift(day), "seasonal_naive": history.shift(day - horizon),
-    })[FEATURES]
 
 
 def station_scores(frame: pd.DataFrame, split: str, rate: float, seeds: list[int]) -> pd.DataFrame:
@@ -49,11 +37,7 @@ def station_scores(frame: pd.DataFrame, split: str, rate: float, seeds: list[int
         return pd.DataFrame(columns=COLUMNS)
 
     # Match the existing forecast benchmark's training features, label filter and Ridge settings.
-    models = {}
-    for horizon in contracts.FORECAST_HORIZONS_STEPS:
-        fit = _forecast_rows(train, horizon)
-        if len(fit) >= 48:
-            models[horizon] = make_pipeline(StandardScaler(), Ridge()).fit(fit[FEATURES], fit["observed"])
+    models = fit_station_ridges(train)
     if not models:
         return pd.DataFrame(columns=COLUMNS)
 
