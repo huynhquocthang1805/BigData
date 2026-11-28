@@ -80,4 +80,15 @@ Lấy bốn dòng `ridge` từ `data/report/forecast-test.csv` tại các horizo
 
 ## Đánh giá ảnh hưởng của điền khuyết lên dự báo
 
-Validation dự báo hiện tại dùng chuỗi đầu vào được forward-fill tối đa 8 bước 15 phút. Để đo ảnh hưởng của việc đổi phương pháp điền khuyết, cần chạy thí nghiệm giữ nguyên Ridge, các khoảng dự báo, mặt nạ thiếu và các thời điểm chấm điểm, rồi thay đổi riêng phương pháp điền khuyết. [Mã benchmark dự báo](../../wq/models/forecast_experiment.py)
+Thí nghiệm trên tập test tháng 7–12/2025 che DO theo đoạn ở mức 10% với ba seed 42, 43 và 44. Với mỗi trạm và khoảng dự báo, hai phương pháp dùng cùng mô hình Ridge đã huấn luyện, cùng mặt nạ thiếu và cùng thời điểm chấm. Kết quả gồm 229 trạm ở mỗi tổ hợp seed và khoảng dự báo. [Mã thí nghiệm](../../benchmarks/bench_imputation_impact.py)
+
+Các giá trị trong bảng là trung bình qua ba seed, đơn vị mg/L. ΔRMSE bằng RMSE Kalman trừ RMSE LOCF.
+
+| Khoảng dự báo | RMSE LOCF | RMSE Kalman | ΔRMSE | MAE LOCF | MAE Kalman |
+|---|---:|---:|---:|---:|---:|
+| 1 giờ | 0,333279 | 0,387722 | +0,054443 | 0,149137 | 0,165025 |
+| 3 giờ | 0,458745 | 0,497720 | +0,038975 | 0,235776 | 0,253512 |
+| 6 giờ | 0,560119 | 0,597888 | +0,037769 | 0,303619 | 0,323582 |
+| 24 giờ | 0,655649 | 0,682597 | +0,026948 | 0,372357 | 0,386978 |
+
+LOCF đạt RMSE và MAE thấp hơn Kalman ở cả bốn khoảng trong kịch bản thiếu theo đoạn 10%. ΔRMSE dương ở cả 12 tổ hợp seed và khoảng dự báo. Chênh lệch RMSE trung bình lớn nhất ở 1 giờ và nhỏ nhất ở 24 giờ. [CSV kết quả theo seed](tables/ridge-imputation-impact-test.csv)
