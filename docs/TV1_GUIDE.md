@@ -33,7 +33,7 @@ Mã việc theo sơ đồ pipeline nhóm (TV1.1 … TV1.7):
 | 7 | Triển khai Docker Compose | `docker-compose.yml`, `docker/Dockerfile` | ✅ 1 lệnh chạy cả hệ thống |
 | 8 | Benchmark hiệu năng | `benchmarks/` | ✅ script + kết quả mẫu (máy 4 vCPU, xem `benchmarks/README.md`) — 🔧 chạy lại trên máy nhóm |
 | 9 | Kiểm chứng tính đúng (trễ/trùng/chịu lỗi) | `scripts/verify_stream.py` | ✅ đã chạy: 0 mất, 0 trùng sau khi kill Spark giữa chừng — 🔧 chạy lại khi demo |
-| 10 | Tích hợp model TV3/TV4 | `wq/models/registry.py`, biến `WQ_IMPUTER`/`WQ_FORECASTER` | ✅ cơ chế sẵn — 🔧 tuần 3 thay baseline bằng model thật |
+| 10 | Tích hợp model TV3/TV4 | `wq/models/registry.py`, biến `WQ_IMPUTER`/`WQ_FORECASTER` | Cấu hình 235 trạm dùng LOCF + Ridge, đã kiểm tra qua Kafka và API |
 | 11 | Báo cáo Ch.1, 4, 5 (hiệu năng), 6 | `docs/report/` | ✅ bản nháp có số liệu mẫu — 🔧 thay bằng số đo trên máy nhóm + kết quả TV3/TV4 |
 | 12 | Unit test | `tests/` (20 test) | ✅ pass |
 | 13 | Ảnh chụp cho báo cáo | `docs/images/` | ✅ dashboard, API, Spark UI (bản đồ trống do mạng máy thử) — 🔧 chụp lại trên máy nhóm |
@@ -223,29 +223,13 @@ from wq.models.imputers_tv3 import KalmanImputer
 KalmanImputer().fit(train_df).save("models/imputer_kalman.joblib")
 ```
 
-TV4 tương tự với `BaseForecaster` (`predict(history)` trả về các cột `PREDICTION_COLUMNS`). Sau đó TV1 bật model:
+TV4 đã xuất Ridge theo hợp đồng `BaseForecaster`. Cấu hình `.env.bigdata` dùng tên `ridge` cho streaming và API. Hai dịch vụ đọc cùng bộ hệ số trong repo. Để áp dụng trên hệ thống đã chạy:
 
-```bash
-echo "WQ_IMPUTER=/app/models/imputer_kalman.joblib" >> .env
+```powershell
+docker compose --env-file .env.bigdata up -d --no-deps --force-recreate stream-processor api
 ```
 
-```bash
-echo "WQ_FORECASTER=/app/models/forecaster_xgb.joblib" >> .env
-```
-
-```bash
-docker compose up -d --force-recreate stream-processor api
-```
-
-Trước khi bật, kiểm tra file bàn giao (phải ĐẠT — đặc biệt imputer phải `causal=True`):
-
-```bash
-docker compose run --rm --no-deps producer python -m wq.models.validate models/imputer_kalman.joblib
-```
-
-Kiểm tra sau khi bật: log `stream-processor` in `imputer=...joblib`; endpoint `/stations/{id}/forecast` trả `forecaster` mới;
-`/predictions/accuracy` có dòng của model mới. Nếu model cần thư viện mới (vd. `torch`), thêm vào
-`requirements.txt` (ghim version) rồi `docker compose build`.
+Log streaming hiển thị `imputer=locf, forecaster=ridge`. Endpoint `/stations/{id}/forecast` trả trường `forecaster` bằng `ridge`. Sau khi có micro-batch và đủ lịch sử, `/predictions/latest` trả dự báo đã lưu. Khi quan trắc đích đến, `/predictions/accuracy` trả số cặp đã chấm và sai số theo horizon. [Lệnh tái lập mô hình](../models/README.md) · [Kết quả replay](report/validation_va_test_do.md#kiểm-tra-ridge-trên-luồng-phục-vụ)
 
 ## 5b. CI/CD: kiểm tra và merge PR của TV2–TV4
 

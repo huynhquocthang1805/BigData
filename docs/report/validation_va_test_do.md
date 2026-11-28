@@ -164,3 +164,18 @@ docker compose --env-file .env.bigdata run --rm --no-deps data-init python -m be
 - `n_stations_considered` là số trạm trong danh mục đã được xét. `n_stations_scored` đếm những trạm có ít nhất một dự báo chấm được. `coverage = n_scored / n_targets`. Lấy `n_scored(locf) − n_scored(masked)` để biết số dự báo LOCF khôi phục thêm.
 - `mae` và `rmse` tính trên mọi dự báo chấm được của từng kịch bản. `mae_common` và `rmse_common` dùng các thời điểm cả ba cùng phát được dự báo. Ở các mốc chung, các đặc trưng đều có quan trắc nên ba đầu vào Ridge giống nhau.
 - `n_recovered_pair` đếm các mốc mà `original` và `locf` dự báo được còn `masked` bỏ qua. So `rmse_recovered` và `mae_recovered` giữa `original` và `locf` trên chính các mốc này để đo tổn thất do mất lịch sử quan trắc. Sai số có đơn vị mg/L. Ô trống nghĩa là không có cặp để tính.
+
+## Kiểm tra Ridge trên luồng phục vụ
+
+Bộ xuất mô hình dùng Spark `local[4]` để đọc 235 trạm và chỉ fit trên giai đoạn 01/01/2023–31/12/2024. Có 233 trạm đủ dữ liệu ở cả bốn khoảng, tương ứng 932 bộ hệ số. Hai trạm `USGS-04183038` và `USGS-06893100` thiếu toàn bộ DO trong train. Mỗi mô hình dùng đúng bộ đặc trưng, StandardScaler và Ridge của thí nghiệm. Cấu hình Big Data dùng LOCF để điền lịch sử và nạp cùng bộ hệ số Ridge trong streaming và API. [Hệ số Ridge](../../models/forecaster_ridge_235.csv) · [Lệnh huấn luyện và kiểm tra](../../models/README.md)
+
+Trên cửa sổ ba ngày cuối test, bộ kiểm tra nạp mô hình, điền lịch sử rồi phát dự báo một lần tại mốc mới nhất mỗi trạm. 196/235 trạm có đủ điều kiện ở thời điểm đó. Kết quả có đủ 60/180/360/1440 phút, đúng `target_ts` và hữu hạn. Phần `predict` mất trung bình 2,5 ms trên mỗi trạm được xét, tính cả trạm bỏ qua. Số 196 là độ phủ tại một thời điểm. Con số 228 trạm ở TV4.4 là số trạm có ít nhất một lần được chấm trong cả kỳ theo kịch bản LOCF.
+
+**Replay tích hợp.** Trên một máy cloud, phát lại 566 bản ghi DO thật của hai trạm Connecticut River (`USGS-01184000`) và Illinois River (`USGS-05586300`) trong 01–03/07/2025 qua Kafka, dùng Spark Structured Streaming `local[2]` và một cơ sở dữ liệu PostgreSQL riêng. Tại hai thời điểm phát dự báo, API theo yêu cầu và `/predictions/latest` trả cùng bốn giá trị Ridge cho mỗi trạm (chênh lệch dưới 10⁻⁹ mg/L). Khi dữ liệu ngày sau đến, `/predictions/accuracy` chấm được cả bốn khoảng ở hai trạm. Ví dụ, tại `USGS-01184000` lúc 23:45 UTC ngày 02/07, Ridge dự báo DO sau 1 giờ là 8,1255 mg/L, quan trắc sau đó là 8,1 mg/L. [Tám cặp dự báo–quan trắc từ PostgreSQL](tables/ridge-stream-predictions.csv)
+
+| Micro-batch | Bản ghi | Kafka gửi → ghi xong quan trắc p50 / p95 | Xử lý ML của batch |
+|---|---:|---:|---:|
+| Đợt 1 | 374 | 4,90 / 5,23 giây | 3,24 giây |
+| Đợt 2 | 192 | 1,84 / 2,01 giây | 0,54 giây |
+
+p50/p95 tính riêng cho mỗi đợt, từ thời điểm producer gửi đến khi ghi xong quan trắc trong PostgreSQL. Sau thời điểm này, phần ML đọc lịch sử, điền khuyết, dự báo và ghi kết quả. Phép thử có hai trạm và hai micro-batch có dữ liệu, phục vụ kiểm tra tích hợp. Số đo tải lớn của hệ thống được ghi riêng trong chương hiệu năng. [CSV độ trễ](tables/ridge-stream-latency.csv)

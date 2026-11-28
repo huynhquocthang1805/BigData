@@ -43,11 +43,11 @@ def read_silver_sdf(spark, lake: str, stations: Sequence[str] | None = None, sta
     return df.select(*columns)
 
 
-def _frame(pdf: pd.DataFrame) -> pd.DataFrame:
+def _frame(pdf: pd.DataFrame, columns: Sequence[str] = contracts.MEASUREMENT_COLUMNS) -> pd.DataFrame:
     pdf = pdf.copy()
     pdf[KEY] = pdf[KEY].astype(str)
     pdf["ts"] = pd.to_datetime(pdf["ts"], utc=True)
-    return pdf[contracts.MEASUREMENT_COLUMNS].sort_values("ts").reset_index(drop=True)
+    return pdf[list(columns)].sort_values("ts").reset_index(drop=True)
 
 
 def station_seed(seed: int, station: str) -> int:
@@ -55,11 +55,11 @@ def station_seed(seed: int, station: str) -> int:
     return seed * 1_000_003 + zlib.crc32(station.encode()) % 1_000_003
 
 
-def fit_by_station(sdf, make_model: Callable[[], object]):
+def fit_by_station(sdf, make_model: Callable[[], object], *, columns: Sequence[str] = contracts.MEASUREMENT_COLUMNS):
     """Fit ``make_model()`` riêng trên dữ liệu từng trạm (trên executor), gộp các tham số theo trạm về driver."""
 
     def fit_one(pdf: pd.DataFrame) -> pd.DataFrame:
-        frame = _frame(pdf)
+        frame = _frame(pdf, columns)
         model = make_model().fit(frame)
         return pd.DataFrame({KEY: [frame[KEY].iloc[0]], "state": [pickle.dumps(model)]})
 

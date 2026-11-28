@@ -18,3 +18,25 @@ rồi `docker compose up -d --force-recreate stream-processor api` (xem `docs/TV
 | (baseline) `locf` | TV1 | `LOCFImputer` | ✅ | ffill ≤ 2h → cùng giờ hôm trước → ffill |
 | `imputer_kalman.joblib` | TV3 | `KalmanImputer` | ✅ | Fit AR(1) theo trạm và biến trên train 2023–2024. Hạng RMSE trung bình 1,40 trong nhóm causal trên validation. Tạo lại bằng `python -m wq.models.imputers_tv3 --method kalman --out models/imputer_kalman.joblib`. |
 | (baseline) `seasonal_naive` | TV1 | `SeasonalNaiveForecaster` | — | y(t+h) = y cùng thời điểm ngày trước |
+| `forecaster_ridge_235.csv` (tên `ridge`) | TV4 | `RidgeForecaster` | Có | Fit StandardScaler và Ridge (alpha = 1) trên train 2023–2024 theo trạm và khoảng dự báo. Bản đi kèm có 932 bộ hệ số cho 233 trạm. |
+
+## Ridge cho bộ 235 trạm
+
+Cấu hình `.env.bigdata` nạp LOCF và Ridge cho cả `stream-processor` lẫn API. Tên `ridge` đọc hệ số CSV đi kèm repo. Mỗi hàng chứa hệ số chặn và năm hệ số đã quy đổi về đơn vị DO gốc, tương đương pipeline StandardScaler → Ridge đã chọn trên validation. Đặc trưng gồm DO hiện tại, các độ trễ 1, 3, 24 giờ và DO tại thời điểm đích lùi 24 giờ. Lịch sử đã điền được đặt lên đúng các mốc 15 phút. Ridge cần tối thiểu 97 mốc từ thời điểm phát lùi 24 giờ. Trạm thiếu mô hình hoặc đặc trưng sẽ bỏ qua dự báo tương ứng. [Hệ số dùng cho phục vụ](forecaster_ridge_235.csv) · [Kiểm tra qua Kafka và API](../docs/report/validation_va_test_do.md#kiểm-tra-ridge-trên-luồng-phục-vụ)
+
+Khi HDFS, Kafka, PostgreSQL và Spark đang chạy, áp dụng cấu hình và xem kết quả trong PowerShell:
+
+```powershell
+docker compose --env-file .env.bigdata up -d --no-deps --force-recreate stream-processor api
+Invoke-RestMethod 'http://localhost:8000/stations/USGS-01184000/forecast'
+Invoke-RestMethod 'http://localhost:8000/predictions/latest?station_id=USGS-01184000'
+```
+
+Endpoint theo yêu cầu dùng lịch sử đã có trong PostgreSQL. Dự báo lưu trong `/predictions/latest` xuất hiện khi streaming xử lý bản ghi mới và đã có đủ lịch sử.
+
+Để huấn luyện lại từ Silver trên HDFS, dùng lệnh bên dưới khi cụm Spark còn lõi trống. Lệnh nạp riêng split train, kiểm tra đủ danh mục, fit phân tán theo trạm và ghi file sau khi fit xong. Đổi `--out` thành `models/forecaster_ridge_235.csv` để tạo lại bản hệ số mặc định. Có thể cấu hình `WQ_FORECASTER=/app/models/forecaster_ridge_235.joblib` nếu dùng bản joblib và tạo lại hai service sau khi thay mô hình.
+
+```powershell
+docker compose --env-file .env.bigdata run --rm --no-deps data-init python -m wq.models.forecasters_tv4 --model ridge --stations all --master spark://spark-master:7077 --out models/forecaster_ridge_235.joblib
+docker compose --env-file .env.bigdata run --rm --no-deps data-init python -m wq.models.validate models/forecaster_ridge_235.joblib --stations all
+```

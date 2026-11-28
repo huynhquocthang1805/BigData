@@ -28,7 +28,10 @@ def _normalize(df: pd.DataFrame) -> pd.DataFrame:
     df["station_id"] = df["station_id"].astype(str)
     df["ts"] = pd.to_datetime(df["ts"], utc=True)
     cols = ["station_id", "ts", *contracts.VARIABLE_NAMES] + (["qc_flags"] if "qc_flags" in df.columns else [])
-    return df[cols].sort_values(["station_id", "ts"]).reset_index(drop=True)
+    # Silver exports may carry only DO. Keep absent sensor channels null for replay and validation.
+    if not set(contracts.VARIABLE_NAMES).intersection(df.columns):
+        raise ValueError("Silver contains no measurement columns.")
+    return df.reindex(columns=cols).sort_values(["station_id", "ts"]).reset_index(drop=True)
 
 
 def read_silver(stations: list[str] | str | None = None, start: str | None = None, end: str | None = None,

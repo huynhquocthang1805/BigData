@@ -30,7 +30,7 @@ Cập nhật lần cuối ngày 28/11/2026.
 | TV3.6 | Mở rộng lên 235 trạm bằng Spark: benchmark + imputer | Tài | Cuối tuần 3 | TV3.3 | ⬜ | |
 | TV4.1 | Giao thức đánh giá dự báo và baseline DO | Nam | Cuối tuần 1 | — | ⬜ | |
 | TV4.2 | Đặc trưng thời gian, XGBoost, LSTM | Nam | Cuối tuần 2 | TV4.1 | ⬜ | |
-| TV4.3 | Xuất forecaster tốt nhất | Nam | **Thứ 4 tuần 3** | TV4.2 | ⬜ | |
+| TV4.3 | Xuất forecaster tốt nhất | Nam | **Thứ 4 tuần 3** | TV4.2 | Đã kiểm tra Ridge, chờ merge | [Replay](report/validation_va_test_do.md#kiểm-tra-ridge-trên-luồng-phục-vụ) |
 | TV4.4 | Thí nghiệm 3 kịch bản: gốc / còn thiếu / đã điền khuyết | Nam | Cuối tuần 3 | TV3.1, TV3.3, TV4.3 | Đã chạy 235 trạm, chờ merge | [Kết quả](report/validation_va_test_do.md#kết-quả-ba-kịch-bản) |
 | TV4.5 | Ch.2: dự báo và bài báo (1); mục 4.x và 5.2 | Nam | Thứ 4 tuần 4 | TV4.4 | ⬜ | |
 | TV4.6 | Mở rộng lên 235 trạm bằng Spark: forecaster + đánh giá | Nam | Cuối tuần 3 | TV4.3 | ⬜ | |
@@ -206,12 +206,12 @@ trên valid, báo cáo trên test kèm số trạm và số điểm chấm đư�
 
 ### TV4.3 Xuất forecaster tốt nhất (thứ 4 tuần 3, đường găng)
 
-- [ ] Class trong `wq/models/forecasters_tv4.py` kế thừa `BaseForecaster`; `targets` và `horizons_steps` đúng contract; `min_history_steps ≤ 192`.
-- [ ] `predict()` trả đúng cột `PREDICTION_COLUMNS`. Trạm không có DO hoặc thiếu lịch sử thì trả khung rỗng, không raise lỗi (lỗi kiểu này từng làm dừng cả luồng streaming).
-- [ ] Có lệnh tái lập `python -m wq.models.forecasters_tv4 --model <tên> --out models/forecaster_<tên>.joblib`; không commit file `.joblib`.
-- [ ] `python -m wq.models.validate models/forecaster_<tên>.joblib` cho kết luận **ĐẠT**, ≤ 100 ms/trạm.
-- [ ] `tests/test_forecasters_tv4.py` dùng `sample_df`: đúng cột, đủ horizon, `target_ts = issued_at + horizon`, không có NaN, xử lý được trạm không có DO.
-- [ ] Thêm một dòng vào bảng trong `models/README.md`.
+- [x] Class trong `wq/models/forecasters_tv4.py` kế thừa `BaseForecaster`; `targets` và `horizons_steps` đúng contract; `min_history_steps ≤ 192`.
+- [x] `predict()` trả đúng cột `PREDICTION_COLUMNS`. Trạm không có DO hoặc thiếu lịch sử thì trả khung rỗng, không raise lỗi (lỗi kiểu này từng làm dừng cả luồng streaming).
+- [x] Có lệnh tái lập `python -m wq.models.forecasters_tv4 --model <tên> --out models/forecaster_<tên>.joblib`; không commit file `.joblib`.
+- [x] `python -m wq.models.validate models/forecaster_<tên>.joblib` cho kết luận **ĐẠT**, ≤ 100 ms/trạm.
+- [x] `tests/test_forecasters_tv4.py` dùng `sample_df`: đúng cột, đủ horizon, `target_ts = issued_at + horizon`, không có NaN, xử lý được trạm không có DO.
+- [x] Thêm một dòng vào bảng trong `models/README.md`.
 
 ### TV4.4 Thí nghiệm 3 kịch bản dữ liệu (cuối tuần 3)
 
@@ -227,9 +227,9 @@ trên valid, báo cáo trên test kèm số trạm và số điểm chấm đư�
 
 Bộ đánh giá dự báo chính gồm 235 trạm, xử lý theo trạm trên Spark. Chỉ thu các bảng sai số về driver.
 
-- [ ] Huấn luyện bằng Spark: mô hình theo trạm thì dùng `wq.spark_ml.fit_by_station`; mô hình chung cho mọi trạm thì tạo đặc trưng bằng Spark (window theo trạm) và huấn luyện bằng `xgboost.spark` hoặc trên mẫu có ghi rõ cách lấy mẫu. Có lệnh tái lập `python -m wq.models.forecasters_tv4 ... --stations all --master spark://spark-master:7077`.
+- [x] Huấn luyện bằng Spark: mô hình theo trạm thì dùng `wq.spark_ml.fit_by_station`; mô hình chung cho mọi trạm thì tạo đặc trưng bằng Spark (window theo trạm) và huấn luyện bằng `xgboost.spark` hoặc trên mẫu có ghi rõ cách lấy mẫu. Có lệnh tái lập `python -m wq.models.forecasters_tv4 ... --stations all --master spark://spark-master:7077`.
 - [ ] Đánh giá cuốn chiếu trên 235 trạm chạy bằng Spark (`groupBy("station_id").applyInPandas`, như `wq.spark_ml.imputation_benchmark`) → `models/results_forecast_235.csv`; ghi thời gian chạy và cấu hình cụm.
-- [ ] `python -m wq.models.validate models/forecaster_<tên>_235.joblib --stations all` cho kết luận **ĐẠT**.
+- [x] `python -m wq.models.validate models/forecaster_<tên>_235.joblib --stations all` cho kết luận **ĐẠT**.
 - [ ] Ghi số trạm được xét và số trạm thực sự đóng góp điểm tại mỗi horizon trong mục 5.2.
 
 ### TV4.5 Ch.2 phần dự báo, mục 4.x và 5.2 (thứ 4 tuần 4)

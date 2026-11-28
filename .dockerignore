@@ -2,6 +2,7 @@
 data
 models/*
 !models/.gitkeep
+!models/forecaster_ridge_235.csv
 **/__pycache__
 **/*.pyc
 .pytest_cache
