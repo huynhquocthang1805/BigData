@@ -15,7 +15,8 @@ from wq.models.forecast_experiment import FEATURES, evaluate_forecast
 from wq.models.imputers_tv3 import KalmanImputer
 
 
-def train_station(station: str, split: str, task: str, missing_type: str, missing_rate: float):
+def train_station(station: str, split: str, task: str, missing_type: str, missing_rate: float,
+                  target: str = "dissolved_oxygen"):
     train = read_silver([station], *contracts.SPLITS["train"])
     evaluation = read_silver([station], *contracts.SPLITS[split])
     if train.empty or evaluation.empty:
@@ -41,12 +42,12 @@ def train_station(station: str, split: str, task: str, missing_type: str, missin
         result["coverage_pct"] = 100 * result.n_scored.div(result.n_masked.where(result.n_masked.gt(0)))
         return result.assign(station_id=station, split=split), None, _serialize(kalman)
 
-    scores, preview, estimators = evaluate_forecast(train, evaluation, include_preview=True)
+    scores, preview, estimators = evaluate_forecast(train, evaluation, target=target, include_preview=True)
     if scores.empty:
-        raise ValueError("Không đủ số đo oxy hòa tan liên tục để huấn luyện và đánh giá dự báo.")
-    artifact = {"station_id": station, "target": contracts.FORECAST_TARGETS[0],
+        raise ValueError(f"Trạm chưa đủ số đo {contracts.LABELS_VI[target]} để huấn luyện và chấm dự báo.")
+    artifact = {"station_id": station, "target": target,
                 "features": FEATURES, "estimators_by_horizon_min": estimators}
-    return scores.assign(station_id=station, split=split), preview, _serialize(artifact)
+    return scores.assign(station_id=station, target=target, unit=contracts.UNITS[target], split=split), preview, _serialize(artifact)
 
 
 def _serialize(model) -> bytes:

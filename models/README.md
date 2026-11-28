@@ -48,7 +48,16 @@ Compose đợi đến khi `/health` trả HTTP 200 sau khi truy vấn PostgreSQL
 
 Nếu `/health` trả `ok` và `/stations/{id}/forecast` trả HTTP 404 với “Chưa có dữ liệu cho trạm này”, bảng `measurements` của PostgreSQL chưa có lịch sử cho mã đó. Danh mục 235 trạm và Silver trên HDFS có thể đã đầy đủ. Dùng ví dụ trên để tìm một trạm đang có dữ liệu phục vụ.
 
-Để thử đúng trạm `USGS-01184000` trên luồng replay mới, kiểm tra `stream-processor` đang chạy rồi phát lại lịch sử từ Silver. Trong bộ Silver của nhóm, khoảng dưới đây có 288 quan trắc DO cho trạm này. Nếu luồng đang dùng checkpoint đã xử lý dữ liệu mới hơn khoảng này, kiểm tra watermark của `serving_sink` trước vì Spark có thể loại các bản ghi đến muộn.
+Để thử đúng trạm `USGS-01184000` khi watermark của `serving_sink` đã vượt qua tháng 7/2025, nạp lịch sử từ Silver vào PostgreSQL rồi gọi API. Lệnh bổ sung mốc đo còn thiếu và thông số còn trống đủ điều kiện QC của trạm trong khoảng từ 01/07 đến hết 03/07 UTC. Có thể chạy lại với cùng tham số. Trong bộ Silver của nhóm, khoảng này có 288 quan trắc DO. Biến `WQ_LAKE_PATH` trong `.env.bigdata` trỏ tới thư mục gốc `hdfs://namenode:8020/wq/lake`.
+
+```powershell
+docker compose --env-file .env.bigdata run --rm --no-deps data-init python -m batch.backfill_station_history --station USGS-01184000 --start 2025-07-01 --end 2025-07-04
+$r = Invoke-RestMethod 'http://127.0.0.1:8000/stations/USGS-01184000/forecast' -ErrorAction Stop
+$r | Select-Object forecaster, history_points
+$r.predictions | Format-Table station_id, horizon_min, target_ts, y_pred
+```
+
+Để đo riêng đường đi Kafka → Spark → PostgreSQL trên luồng replay mới, phát dữ liệu theo thứ tự thời gian. `num_input_rows` đếm các bản ghi Spark đọc trước khi lọc theo watermark. Các sự kiện tháng 7 đến sau watermark tháng 12 sẽ bị loại ở bước khử trùng lặp theo event time.
 
 ```powershell
 docker compose --env-file .env.bigdata run --rm --no-deps producer python -m ingestion.replay_producer --stations USGS-01184000 --start 2025-07-01 --end 2025-07-04 --rate 100

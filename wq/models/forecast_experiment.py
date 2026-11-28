@@ -1,4 +1,4 @@
-"""Chronological dissolved-oxygen experiments with common evaluation rows."""
+"""Chronological station forecasts with common evaluation rows."""
 from __future__ import annotations
 
 from time import perf_counter
@@ -15,8 +15,7 @@ SCORE_COLUMNS = ["model", "horizon_min", "n_scored", "mae", "rmse", "fit_s"]
 FEATURES = ["persistence", "lag_1h", "lag_3h", "lag_24h", "seasonal_naive"]
 
 
-def _forecast_rows(frame: pd.DataFrame, horizon: int) -> pd.DataFrame:
-    target = contracts.FORECAST_TARGETS[0]
+def _forecast_rows(frame: pd.DataFrame, horizon: int, target: str = "dissolved_oxygen") -> pd.DataFrame:
     series = frame.set_index("ts")[target].sort_index().asfreq(f"{contracts.FREQ_MINUTES}min")
     # Each feature is available no later than the forecast issue time.
     filled = series.ffill(limit=8)
@@ -51,11 +50,11 @@ def fit_station_ridges(train: pd.DataFrame) -> dict:
     return models
 
 
-def evaluate_forecast(train: pd.DataFrame, evaluation: pd.DataFrame, *, include_preview: bool = False
+def evaluate_forecast(train: pd.DataFrame, evaluation: pd.DataFrame, *, target: str = "dissolved_oxygen", include_preview: bool = False
                       ) -> tuple[pd.DataFrame, pd.DataFrame | None, dict]:
     scores, previews, estimators = [], [], {}
     for horizon in contracts.FORECAST_HORIZONS_STEPS:
-        fit_rows, eval_rows = (_forecast_rows(frame, horizon) for frame in (train, evaluation))
+        fit_rows, eval_rows = (_forecast_rows(frame, horizon, target) for frame in (train, evaluation))
         if len(fit_rows) < 48 or eval_rows.empty:
             continue
         minutes = horizon * contracts.FREQ_MINUTES

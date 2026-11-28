@@ -1,4 +1,4 @@
-"""WaterScope — monitoring, on-demand DO forecasts and station experiments."""
+"""WaterScope — monitoring, on-demand sensor forecasts and station experiments."""
 from __future__ import annotations
 
 from html import escape
@@ -82,10 +82,8 @@ if page in ("Giám sát", "Dự báo"):
     st.sidebar.markdown(f'<div class="wq-filter-title">{icon("adjustments-horizontal")} Bộ lọc trạm</div>',
                         unsafe_allow_html=True)
     preferred = st.session_state.get("selected_station", st.query_params.get("station"))
-    active_ids = set(stations.loc[has_data, "station_id"])
-    only_active = st.sidebar.toggle("Chỉ trạm có dữ liệu", value=bool(active_ids) and
-                                    (preferred is None or preferred in active_ids), key="only_active")
-    listed = stations[has_data] if only_active else stations
+    only_active = st.sidebar.toggle("Chỉ trạm có dữ liệu", value=False, key="only_active")
+    listed = stations[has_data] if only_active else pd.concat([stations[has_data], stations[~has_data]])
     labels = {r.station_id: f"{r.station_id} · {r['name']}" for _, r in listed.iterrows()}
     ids = list(labels)
     station_id = st.sidebar.selectbox("Trạm quan trắc", ids, format_func=labels.get,
@@ -184,26 +182,53 @@ def show_monitor(stations, station):
 
 
 def show_forecast(station):
-    target = meta["forecast_targets"][0]
+    scope = api(f"/stations/{station_id}/forecast-options")
+    observed = scope["last_observed_at"]
+    available = [v for v in meta["on_demand_targets"] if v in observed]
     with st.container(border=True, key="card_demand"):
-        panel_title("Dự báo tại trạm", f"Lịch sử gần nhất · {timestamp(station.last_ts)}")
-        if st.button("Dự báo ngay", type="primary", disabled=pd.isna(station.last_ts)):
-            st.session_state.pop("station_forecast", None)
+        panel_title("Dự báo tại trạm", f"Quan trắc mới nhất của trạm · {timestamp(station.last_ts)}")
+        if not available:
+            st.info(f"Trạm chưa có thông số quan trắc trong {scope['history_hours']} giờ dữ liệu gần nhất.")
+            return
+        left, right = st.columns(2)
+        preferred = st.session_state.get("selected_param", st.query_params.get("param", "dissolved_oxygen"))
+        target = left.selectbox("Thông số dự báo", available, format_func=lambda v: info[v]["label"],
+                                index=available.index(preferred) if preferred in available else 0)
+        streaming = target in meta["forecast_targets"]
+        options = ([None] if streaming else []) + ["seasonal_naive", "persistence"]
+        labels = {None: "Mô hình đang phục vụ", "seasonal_naive": "Cùng thời điểm hôm trước",
+                  "persistence": "Giữ giá trị gần nhất"}
+        model = right.selectbox("Phương pháp dự báo", options, format_func=labels.get)
+        unit = info[target]["unit"]
+        st.caption(f"{info[target]['label']} · Quan trắc cuối lúc {timestamp(observed[target])}")
+        selection = (station_id, target, model)
+        if st.button("Dự báo ngay", type="primary"):
             with st.spinner("Đang tính dự báo…"):
-                result = api(f"/stations/{station_id}/forecast")
-            st.session_state["station_forecast"] = (station_id, result)
-        saved_station, result = st.session_state.get("station_forecast", (None, None))
-        if saved_station == station_id:
+                result = api(f"/stations/{station_id}/forecast", target=target, model=model)
+            st.session_state["station_forecast"] = (selection, result)
+        saved, result = st.session_state.get("station_forecast", (None, None))
+        live = pd.DataFrame()
+        if saved == selection:
             live = frame(result["predictions"], "issued_at", "target_ts")
             st.caption(f"{result['forecaster']} · {result['imputer']} · {result['history_points']} điểm lịch sử")
             if live.empty:
-                st.info("Mô hình cần thêm lịch sử DO để dự báo cho trạm.")
+                st.info("Mô hình đã chọn chưa đủ lịch sử hoặc hệ số tại trạm. Bạn có thể thử phương pháp giữ giá trị gần nhất.")
             else:
-                tiles = [("clock", f"Sau {int(row.horizon_min)//60} giờ", f"{row.y_pred:.3f} mg/L",
+                tiles = [("clock", f"Sau {int(row.horizon_min)//60} giờ", f"{row.y_pred:.3f} {unit}",
                           timestamp(row.target_ts), "teal") for row in live.sort_values("horizon_min").itertuples()]
                 metrics(tiles)
-        elif pd.isna(station.last_ts):
-            st.info("Trạm này chưa có số đo để lập dự báo.")
+    if not streaming:
+        with st.container(border=True, key="card_sensor_history"):
+            panel_title("Quan trắc và dự báo theo yêu cầu", f"{info[target]['label']} · {days} ngày dữ liệu")
+            raw = frame(api("/measurements", station_id=station_id, days=days, source="raw"), "ts")
+            fig = go.Figure()
+            if not raw.empty:
+                series = raw.set_index("ts")[target].asfreq(f"{meta['freq_minutes']}min")
+                fig.add_trace(go.Scatter(x=series.index, y=series, name="Quan trắc", mode="lines+markers"))
+            if not live.empty:
+                fig.add_trace(go.Scatter(x=live.target_ts, y=live.y_pred, name=result["forecaster"], mode="markers"))
+            draw(fig, 285, unit)
+        return
     with st.container(border=True, key="card_forecast_history"):
         panel_title("Dự báo và quan trắc", f"{station_id} · {days} ngày dữ liệu")
         horizons = meta["forecast_horizons_min"]

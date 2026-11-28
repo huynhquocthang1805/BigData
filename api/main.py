@@ -75,6 +75,7 @@ def meta():
                       for v in contracts.VARIABLES],
         "alert_rules": [r.__dict__ for r in contracts.ALERT_RULES],
         "forecast_targets": contracts.FORECAST_TARGETS,
+        "on_demand_targets": VARS,
         "forecast_horizons_min": [h * contracts.FREQ_MINUTES for h in contracts.FORECAST_HORIZONS_STEPS],
         "freq_minutes": contracts.FREQ_MINUTES,
     }
@@ -164,26 +165,51 @@ def predictions_accuracy(target: str = "dissolved_oxygen", station_id: str | Non
              {"t": target, "s": station_id})
 
 
+_RECENT_HISTORY = """FROM measurements WHERE station_id = %(s)s
+    AND ts > (SELECT max(ts) FROM measurements WHERE station_id = %(s)s) - make_interval(hours => %(h)s)"""
+
+
+@app.get("/stations/{station_id}/forecast-options", tags=["prediction"])
+def forecast_options(station_id: str, history_hours: int = Query(48, ge=6, le=720)):
+    """Quan trắc cuối của từng cảm biến trong cửa sổ lịch sử của trạm."""
+    columns = ", ".join(f"max(ts) FILTER (WHERE {v} IS NOT NULL) AS {v}" for v in VARS)
+    last = q(f"SELECT {columns} {_RECENT_HISTORY}", {"s": station_id, "h": history_hours})[0]
+    return {"history_hours": history_hours, "last_observed_at": {v: ts for v, ts in last.items() if ts is not None}}
+
+
 @app.get("/stations/{station_id}/forecast", tags=["prediction"])
-def forecast_on_demand(station_id: str, model: str | None = None, history_hours: int = Query(48, ge=6, le=720)):
-    """Dự báo theo yêu cầu: lấy lịch sử từ DB -> imputer -> forecaster (cùng interface với streaming)."""
+def forecast_on_demand(station_id: str, model: str | None = None, history_hours: int = Query(48, ge=6, le=720),
+                       target: str = "dissolved_oxygen"):
+    """Dự báo DO bằng cấu hình phục vụ, hoặc dự báo một cảm biến có quan trắc tại trạm."""
     from wq.models.registry import load_forecaster, load_imputer
     from wq.timeseries import regularize
 
-    rows = q(f"""SELECT station_id, ts, {", ".join(VARS)} FROM measurements
-                 WHERE station_id = %(s)s AND ts > (SELECT max(ts) FROM measurements WHERE station_id = %(s)s)
-                       - make_interval(hours => %(h)s) ORDER BY ts""", {"s": station_id, "h": history_hours})
+    _check_param(target)
+    is_do = target == "dissolved_oxygen"
+    if not is_do and model not in (None, "persistence", "seasonal_naive"):
+        raise HTTPException(400, "Thông số này hỗ trợ seasonal_naive và persistence trong dự báo theo yêu cầu.")
+    rows = q(f"SELECT station_id, ts, {', '.join(VARS)} {_RECENT_HISTORY} ORDER BY ts",
+             {"s": station_id, "h": history_hours})
     if not rows:
         raise HTTPException(404, "Chưa có dữ liệu cho trạm này")
     try:
         imputer = load_imputer(settings.imputer)
-        forecaster = load_forecaster(model or settings.forecaster)
+        forecaster = load_forecaster(model or (settings.forecaster if is_do else "seasonal_naive"))
     except (ValueError, TypeError) as e:
         raise HTTPException(400, str(e)) from e
-    hist = imputer.transform(regularize(pd.DataFrame(rows)))
-    preds = forecaster.predict(hist)
-    return {"imputer": imputer.name, "forecaster": forecaster.name, "history_points": len(hist),
-            "predictions": preds.to_dict(orient="records")}
+    history = regularize(pd.DataFrame(rows))
+    observed = history.loc[history[target].notna(), "ts"]
+    last_observed = None if observed.empty else observed.iloc[-1]
+    if not is_do and last_observed is not None:
+        history = history.loc[history.ts <= last_observed]
+        forecaster.targets = [target]
+    predictions = []
+    if last_observed is not None:
+        preds = forecaster.predict(imputer.transform(history))
+        predictions = preds.loc[preds.target == target].to_dict(orient="records")
+    return {"target": target, "unit": contracts.UNITS[target], "last_observed_at": last_observed,
+            "imputer": imputer.name, "forecaster": forecaster.name, "history_points": len(history),
+            "predictions": predictions}
 
 
 @app.get("/alerts", tags=["monitoring"])

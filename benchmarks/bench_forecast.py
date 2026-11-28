@@ -14,13 +14,12 @@ from wq.spark_ml import read_silver_sdf
 from wq.spark_utils import build_spark
 
 
-def run_benchmark(spark, lake: str, split: str) -> pd.DataFrame:
+def run_benchmark(spark, lake: str, split: str, target: str = "dissolved_oxygen") -> pd.DataFrame:
     from pyspark.sql import functions as F
 
-    target = contracts.FORECAST_TARGETS[0]
     train_start, train_end = contracts.SPLITS["train"]
     eval_start, eval_end = contracts.SPLITS[split]
-    sdf = read_silver_sdf(spark, lake, start=train_start, end=eval_end).select("station_id", "ts", target)
+    sdf = read_silver_sdf(spark, lake, start=train_start, end=eval_end, columns=["station_id", "ts", target])
     sdf = sdf.where((F.col("ts") < train_end) | (F.col("ts") >= eval_start))
     schema = "model string, horizon_min int, n_scored long, mae double, rmse double, fit_s double, station_id string"
 
@@ -31,7 +30,7 @@ def run_benchmark(spark, lake: str, split: str) -> pd.DataFrame:
         evaluation = frame[frame["ts"] >= pd.Timestamp(eval_start, tz="UTC")]
         if train.empty or evaluation.empty:
             return pd.DataFrame(columns=[*SCORE_COLUMNS, "station_id"])
-        scores, _, _ = evaluate_forecast(train, evaluation)
+        scores, _, _ = evaluate_forecast(train, evaluation, target=target)
         return scores.assign(station_id=station)
 
     return sdf.groupBy("station_id").applyInPandas(score_station, schema=schema).toPandas()
@@ -52,6 +51,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lake", default=get_settings().lake_path)
     parser.add_argument("--master")
+    parser.add_argument("--target", choices=contracts.VARIABLE_NAMES, default="dissolved_oxygen")
     parser.add_argument("--split", choices=["valid", "test"], default="valid")
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--per-station-out", type=Path)
@@ -59,12 +59,15 @@ def main() -> None:
 
     spark = build_spark("wq-bench-forecast", master=args.master)
     try:
-        parts = run_benchmark(spark, args.lake, args.split)
+        parts = run_benchmark(spark, args.lake, args.split, args.target)
     finally:
         spark.stop()
     if parts.empty:
         parser.exit(1, "Không có trạm đủ dữ liệu để tính điểm dự báo.\n")
     summary = summarize(parts)
+    if args.target != "dissolved_oxygen":
+        parts = parts.assign(target=args.target, unit=contracts.UNITS[args.target])
+        summary = summary.assign(target=args.target, unit=contracts.UNITS[args.target])
     args.out.parent.mkdir(parents=True, exist_ok=True)
     summary.assign(split=args.split).to_csv(args.out, index=False)
     if args.per_station_out:

@@ -55,7 +55,23 @@ Bật thêm HDFS (1 NameNode + 2 DataNode, http://localhost:9870), tải 235 tr�
 chạy ETL trên cụm Spark, streaming đặt checkpoint trên HDFS. Cần Docker ≥ 6 CPU / 12 GB RAM; lần tải đầu mất lâu
 do giới hạn tốc độ của API USGS (script tự tiếp tục từ chỗ dừng). Chi tiết: [`docs/architecture.md`](docs/architecture.md).
 
-Trong WaterScope, chọn trạm ở thanh bên rồi mở **Dự báo → Dự báo ngay** để xem DO ở 1, 3, 6 và 24 giờ. Mục **Mô hình** hiển thị các benchmark đã lưu trong `data/report`. Ở **Huấn luyện theo trạm**, chọn bài toán và tập đánh giá để chạy trên Silver, sau đó tải bảng sai số hoặc mô hình.
+### Mở giám sát và dự báo cho danh mục 235 trạm
+
+WaterScope liệt kê toàn bộ danh mục PostgreSQL. Bộ lọc **Chỉ trạm có dữ liệu** thu hẹp danh sách xuống các trạm đã có quan trắc phục vụ. Khi HDFS đã có Silver của 235 trạm, chạy lệnh sau để nạp quan trắc của ba ngày đầu tháng 7 vào dashboard. Ngày kết thúc là cận trên mở, theo UTC.
+
+```powershell
+docker compose --env-file .env.bigdata run --rm --no-deps data-init python -m batch.backfill_station_history --stations all --start 2025-07-01 --end 2025-07-04
+```
+
+Lệnh ghi từng ngày, bổ sung mốc đo và ô cảm biến còn trống vào PostgreSQL, giữ giá trị đã có và các ô đã bị QC loại. Dòng cuối `stations_with_observations` cho biết bao nhiêu trạm trong danh mục có quan trắc trong khoảng đã chọn. Có thể nạp lại cùng kỳ hoặc đổi khoảng ngày. Checkpoint và watermark thuộc luồng Kafka–Spark riêng.
+
+Ở **Dự báo**, chọn trạm, thông số, phương pháp rồi bấm **Dự báo ngay**. Danh sách thông số dựa trên quan trắc trong 48 giờ tính ngược từ mốc mới nhất của trạm. API tiếp tục dùng mô hình phục vụ đã cấu hình cho DO. Nhiệt độ nước, pH, độ dẫn điện riêng, độ đục và lưu lượng dùng giá trị cùng giờ ngày trước hoặc giá trị gần nhất theo lựa chọn. Màn hình ghi đơn vị và thời điểm đích ở 1, 3, 6 và 24 giờ. Ví dụ API cho nhiệt độ nước là `/stations/USGS-01400500/forecast?target=water_temp`. Dự báo lịch sử do streaming ghi hiện áp dụng cho DO.
+
+Trong **Mô hình → Huấn luyện theo trạm**, chọn **Dự báo theo thông số** để so Ridge, Persistence và Seasonal Naive trên cùng tập đánh giá của trạm. Để chấm một thông số trên toàn bộ Silver bằng Spark và hiển thị bảng trong **Benchmark dự báo**, dùng ví dụ sau. Thay `water_temp` ở cả tên thông số và tên tệp khi đổi biến. Các mức MAE/RMSE dùng đơn vị riêng của từng cảm biến.
+
+```powershell
+docker compose --env-file .env.bigdata run --rm --no-deps data-init python -m benchmarks.bench_forecast --master spark://spark-master:7077 --split test --target water_temp --out data/report/forecast-water_temp-test.csv --per-station-out data/report/forecast-water_temp-test-stations.csv
+```
 
 ![WaterScope giám sát trạm Connecticut River tại Thompsonville](docs/images/dashboard_monitoring.png)
 

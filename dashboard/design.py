@@ -17,7 +17,7 @@ MODEL_COLORS = [BLUE, "#18988f", "#785aca", "#cc7126", "#906549"]
 COLORS = {"raw": BLUE, "imputed": "#9860ce", "forecast": "#00877a", "threshold": "#c76332"}
 PAGES = {
     "Giám sát": ("activity", "Giám sát chất lượng nước"),
-    "Dự báo": ("chart-line", "Dự báo oxy hòa tan"),
+    "Dự báo": ("chart-line", "Dự báo chất lượng nước"),
     "Cảnh báo": ("bell", "Cảnh báo chất lượng nước"),
     "Pipeline": ("server", "Hiệu năng pipeline"),
     "Mô hình": ("flask", "Phòng thí nghiệm mô hình"),
