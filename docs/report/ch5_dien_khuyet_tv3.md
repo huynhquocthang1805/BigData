@@ -2,6 +2,8 @@
 
 ## 5.1 Kết quả điền khuyết
 
+Kết quả DO chính của Chương 5 xét 235 trạm. Phần dưới ghi lại thực nghiệm đối chiếu ban đầu trên 10 trạm cho cả năm biến. [Bảng validation và test trên bộ 235 trạm](validation_va_test_do.md)
+
 ### Phạm vi và cách đọc kết quả
 
 Thực nghiệm trên tập test nửa cuối năm 2025 gồm 176.640 dòng từ 10 trạm USGS. Mỗi phương pháp chạy với hai kiểu thiếu, bốn tỷ lệ che, năm biến và ba seed (42, 43, 44), tạo 600 dòng kết quả. Các bảng dưới đây lấy trung bình ba seed trong từng tổ hợp. Sai số được tính trên các ô bị che mà phương pháp điền được, nên cần đọc cùng độ bao phủ. [Giao thức thí nghiệm](ch4_dien_khuyet_tv3.md) · [CSV benchmark](../../models/results_imputation.csv)

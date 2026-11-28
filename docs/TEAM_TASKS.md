@@ -156,7 +156,7 @@ Thí nghiệm trên 10 trạm chuẩn và 5 biến core; fit trên train, chọn
 
 ### TV3.6 Mở rộng lên 235 trạm bằng Spark (cuối tuần 3)
 
-Bộ 10 trạm vẫn là bộ so sánh chính của Ch.5. Việc này chứng minh mô hình chạy được trên dữ liệu lớn, phân tán trên cụm
+Chương 5 dùng danh mục 235 trạm cho kết quả DO chính. Các bảng 10 trạm đã có là kết quả đối chiếu. Benchmark phân tán trên cụm
 Spark (chế độ `--env-file .env.bigdata`, silver trên HDFS). Không nạp cả bộ 235 trạm vào pandas: dùng `wq.spark_ml`.
 
 - [ ] `python -m benchmarks.bench_imputation_tv3 --stations all --master spark://spark-master:7077 --out models/results_imputation_235.csv --per-station-out models/results_imputation_235_by_station.csv` (ít nhất 1 seed, tốt hơn 3); ghi thời gian chạy và cấu hình cụm trong PR.
@@ -188,8 +188,8 @@ Spark (chế độ `--env-file .env.bigdata`, silver trên HDFS). Không nạp c
 `models/results_scenarios.csv`, `docs/report/*_tv4.md`, `docs/images/tv4_*`.
 **Báo cáo:** Ch.2 phần dự báo (bài báo 1), mục 4.x và 5.2.
 
-Target là oxy hòa tan (`dissolved_oxygen`); horizon 1, 3, 6 và 24 giờ (4, 12, 24, 96 mốc); 10 trạm chuẩn; chọn tham số
-trên valid, báo cáo trên test.
+Target là oxy hòa tan (`dissolved_oxygen`); horizon 1, 3, 6 và 24 giờ (4, 12, 24, 96 mốc). Phạm vi chính là danh mục 235 trạm. Chọn tham số
+trên valid, báo cáo trên test kèm số trạm và số điểm chấm được.
 
 ### TV4.1 Giao thức đánh giá và baseline (cuối tuần 1)
 
@@ -215,23 +215,22 @@ trên valid, báo cáo trên test.
 
 ### TV4.4 Thí nghiệm 3 kịch bản dữ liệu (cuối tuần 3)
 
-- [ ] Ba kịch bản trên cùng split test, cùng 10 trạm, cùng seed:
+- [ ] Chạy ba kịch bản trên cùng tập test và danh mục 235 trạm, giữ cùng mô hình Ridge và cùng seed.
   - **Gốc**: dữ liệu test như hiện có (chỉ có khoảng thiếu tự nhiên).
   - **Còn thiếu**: che thêm dữ liệu đầu vào bằng `wq.evaluation.make_mask` của TV3.1 (ít nhất 20% kiểu khối, tốt hơn là 10, 20 và 30%), không điền.
   - **Đã điền khuyết**: cùng dữ liệu "còn thiếu", điền bằng imputer của TV3.3 trước khi dự báo.
 - [ ] Luôn chấm trên giá trị thật không bị che.
-- [ ] `models/results_scenarios.csv` với cột `model, scenario, missing_type, missing_rate, horizon_min, station_id, n, mae, rmse`.
+- [ ] Lưu kết quả 36 tổ hợp seed, horizon và kịch bản vào `docs/report/tables/ridge-scenarios-test.csv` kèm số trạm, độ phủ và sai số trên các thời điểm chung. [Giao thức và lệnh Spark](report/validation_va_test_do.md#thí-nghiệm-ba-kịch-bản-trên-235-trạm-tv44)
 - [ ] Trả lời bằng số: điền khuyết có giúp dự báo tốt hơn không, và ở horizon nào.
 
 ### TV4.6 Mở rộng lên 235 trạm bằng Spark (cuối tuần 3)
 
-Như TV3.6: bộ 10 trạm là bộ so sánh chính; việc này cho thấy forecaster huấn luyện và đánh giá được trên dữ liệu lớn,
-phân tán trên cụm Spark. Không nạp cả bộ 235 trạm vào pandas.
+Bộ đánh giá dự báo chính gồm 235 trạm, xử lý theo trạm trên Spark. Chỉ thu các bảng sai số về driver.
 
 - [ ] Huấn luyện bằng Spark: mô hình theo trạm thì dùng `wq.spark_ml.fit_by_station`; mô hình chung cho mọi trạm thì tạo đặc trưng bằng Spark (window theo trạm) và huấn luyện bằng `xgboost.spark` hoặc trên mẫu có ghi rõ cách lấy mẫu. Có lệnh tái lập `python -m wq.models.forecasters_tv4 ... --stations all --master spark://spark-master:7077`.
 - [ ] Đánh giá cuốn chiếu trên 235 trạm chạy bằng Spark (`groupBy("station_id").applyInPandas`, như `wq.spark_ml.imputation_benchmark`) → `models/results_forecast_235.csv`; ghi thời gian chạy và cấu hình cụm.
 - [ ] `python -m wq.models.validate models/forecaster_<tên>_235.joblib --stations all` cho kết luận **ĐẠT**.
-- [ ] So sánh với kết quả 10 trạm trong mục 5.2.
+- [ ] Ghi số trạm được xét và số trạm thực sự đóng góp điểm tại mỗi horizon trong mục 5.2.
 
 ### TV4.5 Ch.2 phần dự báo, mục 4.x và 5.2 (thứ 4 tuần 4)
 

@@ -30,17 +30,17 @@ RESULT_COLUMNS = ["method", "causal", "missing_type", "missing_rate", "variable"
 
 
 def read_silver_sdf(spark, lake: str, stations: Sequence[str] | None = None, start: str | None = None,
-                    end: str | None = None):
+                    end: str | None = None, *, columns: Sequence[str] = contracts.MEASUREMENT_COLUMNS):
     from pyspark.sql import functions as F
 
-    df = spark.read.parquet(f"{lake}/silver/measurements").select(*contracts.MEASUREMENT_COLUMNS)
+    df = spark.read.parquet(f"{lake}/silver/measurements")
     if stations:
         df = df.where(F.col(KEY).isin(list(stations)))
     if start:
         df = df.where(F.col("ts") >= F.to_timestamp(F.lit(start)))
     if end:
         df = df.where(F.col("ts") < F.to_timestamp(F.lit(end)))
-    return df
+    return df.select(*columns)
 
 
 def _frame(pdf: pd.DataFrame) -> pd.DataFrame:

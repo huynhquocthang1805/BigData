@@ -1,11 +1,9 @@
 # Chương 6. Kết luận (bản nháp — TV1)
 
-> Cập nhật các con số `[...]` và kết luận của TV3/TV4 sau khi có kết quả cuối.
-
 ## 6.1 Kết quả đạt được
 
 - Xây dựng thành công pipeline Big Data end-to-end cho bài toán giám sát, điền khuyết và dự báo chất lượng nước
-  trên dữ liệu cảm biến thật của USGS (10 trạm, 5,96 triệu giá trị đo, 2023–2025), triển khai bằng một lệnh
+  trên bộ 235 trạm USGS giai đoạn 2023–2025 (24.725.760 dòng Silver trên lưới 15 phút), triển khai bằng một lệnh
   Docker Compose với Kafka, cụm Spark (1 master, 2 worker), HDFS (NameNode, 2 DataNode, hệ số nhân bản 2),
   PostgreSQL, FastAPI và Streamlit. Cùng mã nguồn chạy được ở chế độ demo (ổ đĩa cục bộ) và chế độ Big Data
   (data lake, dữ liệu thô và checkpoint trên HDFS, ETL trên cụm Spark).
@@ -25,8 +23,8 @@
   1,42 lần (62 và 130 triệu).
 - Streaming có điền khuyết và dự báo không mất bản ghi nào với 10, 50 và 100 trạm; số trạm tăng 10 lần thì độ trễ
   p50 tăng 43% (5,5 → 7,9 s ở 1.000 msg/s).
-- [TV3] Phương pháp điền khuyết tốt nhất: [...], giảm RMSE [...]% so với LOCF ở tỉ lệ thiếu 20% liên tục.
-- [TV4] Mô hình dự báo tốt nhất: [...]; dự báo trên dữ liệu đã điền khuyết tốt hơn dữ liệu còn thiếu [...]%.
+- Trên tập test tháng 7–12/2025, khi che theo đoạn 20% DO, LOCF đạt RMSE 0,7700 mg/L, MAE 0,4000 mg/L và độ phủ 99,92% qua ba seed. Có 230/235 trạm đóng góp điểm điền khuyết ở mức này. [Kết quả test](validation_va_test_do.md)
+- Ridge có kết quả dự báo trên 229/235 trạm. So với baseline tốt nhất từng khoảng, RMSE test giảm 23,08% ở 1 giờ, 39,21% ở 3 giờ, 21,61% ở 6 giờ và 5,11% ở 24 giờ. Trong thí nghiệm che thêm 10% và giữ cùng mô hình Ridge, LOCF cho RMSE thấp hơn Kalman ở cả bốn khoảng. Phép so sánh với để trống đầu vào có giao thức riêng ở mục TV4.4. [Kết quả dự báo và giao thức ba kịch bản](validation_va_test_do.md)
 
 ## 6.2 Hạn chế
 
