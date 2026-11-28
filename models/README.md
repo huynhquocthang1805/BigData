@@ -27,10 +27,12 @@ Cấu hình `.env.bigdata` nạp LOCF và Ridge cho cả `stream-processor` lẫ
 Khi HDFS, Kafka, PostgreSQL và Spark đang chạy, áp dụng cấu hình và xem kết quả trong PowerShell:
 
 ```powershell
-docker compose --env-file .env.bigdata up -d --no-deps --force-recreate stream-processor api
-Invoke-RestMethod 'http://localhost:8000/stations/USGS-01184000/forecast'
-Invoke-RestMethod 'http://localhost:8000/predictions/latest?station_id=USGS-01184000'
+docker compose --env-file .env.bigdata up -d --wait --wait-timeout 120 --no-deps --force-recreate stream-processor api
+Invoke-RestMethod 'http://127.0.0.1:8000/stations/USGS-01184000/forecast'
+Invoke-RestMethod 'http://127.0.0.1:8000/predictions/latest?station_id=USGS-01184000'
 ```
+
+Compose đợi đến khi `/health` trả HTTP 200 sau khi truy vấn PostgreSQL thành công. Nếu lệnh hết thời gian chờ, xem `docker compose --env-file .env.bigdata logs --tail 80 api postgres`.
 
 Endpoint theo yêu cầu dùng lịch sử đã có trong PostgreSQL. Dự báo lưu trong `/predictions/latest` xuất hiện khi streaming xử lý bản ghi mới và đã có đủ lịch sử.
 

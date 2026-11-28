@@ -226,7 +226,7 @@ KalmanImputer().fit(train_df).save("models/imputer_kalman.joblib")
 TV4 đã xuất Ridge theo hợp đồng `BaseForecaster`. Cấu hình `.env.bigdata` dùng tên `ridge` cho streaming và API. Hai dịch vụ đọc cùng bộ hệ số trong repo. Để áp dụng trên hệ thống đã chạy:
 
 ```powershell
-docker compose --env-file .env.bigdata up -d --no-deps --force-recreate stream-processor api
+docker compose --env-file .env.bigdata up -d --wait --wait-timeout 120 --no-deps --force-recreate stream-processor api
 ```
 
 Log streaming hiển thị `imputer=locf, forecaster=ridge`. Endpoint `/stations/{id}/forecast` trả trường `forecaster` bằng `ridge`. Sau khi có micro-batch và đủ lịch sử, `/predictions/latest` trả dự báo đã lưu. Khi quan trắc đích đến, `/predictions/accuracy` trả số cặp đã chấm và sai số theo horizon. [Lệnh tái lập mô hình](../models/README.md) · [Kết quả replay](report/validation_va_test_do.md#kiểm-tra-ridge-trên-luồng-phục-vụ)
